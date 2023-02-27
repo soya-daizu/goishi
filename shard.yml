@@ -1,0 +1,24 @@
+name: goishi
+version: 0.1.0
+
+authors:
+  - soya_daizu <soya_daizu@proton.me>
+
+targets:
+  test:
+    main: examples/test.cr
+
+dependencies:
+  stumpy_png:
+    github: stumpycr/stumpy_png
+  pix_fmt:
+    github: postmodern/pix_fmt.cr
+  v4l2:
+    github: postmodern/v4l2.cr
+
+crystalline:
+  main: examples/test.cr
+
+crystal: 1.7.2
+
+license: MIT
