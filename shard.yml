@@ -5,8 +5,8 @@ authors:
   - soya_daizu <soya_daizu@proton.me>
 
 targets:
-  test:
-    main: examples/test.cr
+  extract_test:
+    main: examples/extract_test.cr
 
 dependencies:
   stumpy_png:
@@ -17,7 +17,7 @@ dependencies:
     github: postmodern/v4l2.cr
 
 crystalline:
-  main: examples/test.cr
+  main: examples/extract_test.cr
 
 crystal: 1.7.2
 
