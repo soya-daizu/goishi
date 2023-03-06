@@ -159,7 +159,7 @@ module Goishi
         clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
         clue_rising ? Math.max(v1, v2) : Math.min(v1, v2)
       else
-        raise "Unable to determine angle of {{prop.id}} endpoints"
+        raise "Unable to determine the angle of {{prop.id}} endpoints"
       end
     end
 
@@ -228,7 +228,7 @@ module Goishi
         clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
         clue_rising ? Math.max(v1, v2) : Math.min(v1, v2)
       else
-        raise "Unable to determine angle of {{prop.id}} endpoints"
+        raise "Unable to determine the angle of {{prop.id}} endpoints"
       end
     end
 

@@ -3,13 +3,13 @@ require "./locator/*"
 module Goishi
   struct Locator
     @data : Matrix(UInt8)
-    @finder_quads : Array(Tuple(Quad, Int32))
+    @finder_quads : Array(Quad)
 
     def initialize(data : Matrix(UInt8))
       center = Point.new(data.size_x / 2, data.size_y / 2)
 
       @data = data
-      @finder_quads = LineScanner.scan_finder_pat(data).map do |q|
+      @finder_quads = LineScanner.scan_finder_pat(data).to_a.sort_by! do |q|
         q_center = q.center
         score = 0
         # Prefer patterns with b:w:bbb:w:b
@@ -22,31 +22,51 @@ module Goishi
         # Penalize patterns that the center does not match the color
         score -= 100 if data[q_center.x.to_i, q_center.y.to_i] != q.color
 
-        {q, score.round_even.to_i}
-      end.to_a.sort! { |a, b| b[1] <=> a[1] }
-
-      # pp @finder_quads
+        -score.round_even.to_i
+      end
     end
 
-    def locate_qr : Iterator(QRLocation)
-      finder_quad_groups = @finder_quads.combinations(3).sort! do |a, b|
-        b.sum(&.[1]) <=> a.sum(&.[1])
-      end
+    def locate_qr(max_candidates : Int, & : QRLocation ->)
+      candidates_count = 0
 
-      finder_quad_groups.each.compact_map do |g|
-        # Starting with an assumption that the QR Code symbol is already in the right orientation,
-        # thus sorting the quads by position to the top left
-        g = g.map(&.[0]).sort_by! { |q| q.center_x + q.center_y }
+      (0...@finder_quads.size).each do |i|
+        q1 = @finder_quads[i]
 
-        location = test_finder_arrangement(g[0], g[1], g[2])
-        location = test_finder_arrangement(g[1], g[0], g[2]) unless location
-        location = test_finder_arrangement(g[2], g[0], g[1]) unless location
-        next location if location
+        (i + 1...@finder_quads.size).each do |j|
+          q2 = @finder_quads[j]
+          next unless q2.color == q1.color
+
+          size1 = (q1.width + q1.height) / 2
+          size2 = (q2.width + q2.height) / 2
+          diff1 = (size1 - size2) / size1
+          next if diff1.abs > 0.2
+
+          (j + 1...@finder_quads.size).each do |k|
+            return if candidates_count >= max_candidates
+
+            q3 = @finder_quads[k]
+            next unless q3.color == q1.color
+
+            size3 = (q3.width + q3.height) / 2
+            diff2 = (size1 - size3) / size1
+            next if diff2.abs > 0.2
+
+            location = test_finder_arrangement(q1, q2, q3)
+            location = test_finder_arrangement(q2, q1, q3) unless location
+            location = test_finder_arrangement(q3, q1, q2) unless location
+            next unless location
+
+            candidates_count += 1
+            yield location
+          end
+        end
       end
     end
 
     private def test_finder_arrangement(a : Quad, b : Quad, c : Quad)
-      a_center, b_center, c_center = a.center, b.center, c.center
+      a_center = refine_center(a.center, a.color)
+      b_center = refine_center(b.center, b.color)
+      c_center = refine_center(c.center, c.color)
 
       # Define vectors
       ab, ac = (b_center - a_center), (c_center - a_center)
@@ -59,13 +79,13 @@ module Goishi
       # Calculate unit size (= module size) and version
       a_unit_ab = refine_unit(a_center, ab, a.color)
       b_unit_ab = refine_unit(b_center, ab, a.color)
-      ab_unit = ((a_unit_ab + b_unit_ab) / 2).round_even
-      version1 = ((ab_len / ab_unit - 10) / 4).round_even
+      ab_unit = (a_unit_ab + b_unit_ab) / 2
+      version1 = (ab_len / ab_unit - 10) / 4
 
       a_unit_ac = refine_unit(a_center, ac, a.color)
       c_unit_ac = refine_unit(c_center, ac, a.color)
-      ac_unit = ((a_unit_ac + c_unit_ac) / 2).round_even
-      version2 = ((ac_len / ac_unit - 10) / 4).round_even
+      ac_unit = (a_unit_ac + c_unit_ac) / 2
+      version2 = (ac_len / ac_unit - 10) / 4
 
       unit = ((ab_unit + ac_unit) / 2).round_even.to_i
       version = ((version1 + version2) / 2).round_even.to_i
@@ -76,11 +96,11 @@ module Goishi
       c_angle_lr = c.angle_lr(ab)
       c_angle_tb = c.angle_tb(ab)
 
-      top_left = refine_center(a.center, a.color)
+      top_left = a_center
       # Rearrange B and C according to sin_sita
       if sin_sita > 0
-        top_right = refine_center(c_center, c.color)
-        bottom_left = refine_center(b_center, b.color)
+        top_right = c_center
+        bottom_left = b_center
 
         # Make the vector of BD and CD
         if (0.7..1.3).includes?(Point.angle_between(ac, c_angle_lr).abs) &&
@@ -92,11 +112,11 @@ module Goishi
           top_right_bottom_right_vec = top_right + c_angle_tb
           bottom_left_bottom_right_vec = bottom_left + b_angle_lr
         else
-          raise "Unable to determine the bottom-right point of the symbol"
+          return
         end
       else
-        top_right = refine_center(b_center, b.color)
-        bottom_left = refine_center(c_center, c.color)
+        top_right = b_center
+        bottom_left = c_center
 
         # Make the vector of BD and CD
         if (0.7..1.3).includes?(Point.angle_between(ab, b_angle_lr).abs) &&
@@ -108,7 +128,7 @@ module Goishi
           top_right_bottom_right_vec = top_right + b_angle_tb
           bottom_left_bottom_right_vec = bottom_left + c_angle_lr
         else
-          raise "Unable to determine the bottom-right point of the symbol"
+          return
         end
       end
 
@@ -116,9 +136,9 @@ module Goishi
       intersection = intersection(
         top_right, top_right_bottom_right_vec,
         bottom_left, bottom_left_bottom_right_vec
-      )
-      raise "Invalid intersection" unless (0...@data.size_x).includes?(intersection.x) &&
-                                          (0...@data.size_y).includes?(intersection.y)
+      ) rescue return
+      return unless (0...@data.size_x).includes?(intersection.x) &&
+                    (0...@data.size_y).includes?(intersection.y)
 
       # Try finding an alignment pattern around D
       alignment_point = refine_bottom_right(intersection, a_center, unit, a.color) if version >= 2
@@ -216,7 +236,7 @@ module Goishi
         # Penalize patterns that the center does not match the color
         score -= 100 if @data[q_center.x.to_i, q_center.y.to_i] != q.color
 
-        pp({q, score, distance, q_unit, unit})
+        # pp({q, score, distance, q_unit, unit})
 
         score
       end

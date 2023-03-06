@@ -1,17 +1,15 @@
 module Goishi
   struct Extractor
     @data : Matrix(UInt8)
-    @location : QRLocation
 
-    def initialize(@data, @location)
+    def initialize(@data)
     end
 
-    def extract
-      puts @location
-      dst_size = (17 + @location.version * 4)
+    def extract(location : QRLocation)
+      dst_size = 17 + location.version * 4
       dst = Matrix(UInt8).new(dst_size, dst_size, 0_u8)
 
-      transformer = get_transformer(dst_size)
+      transformer = get_transformer(location, dst_size)
 
       dst_size.times do |y|
         dst_size.times do |x|
@@ -23,8 +21,8 @@ module Goishi
       dst
     end
 
-    private def get_transformer(dst_size : Int)
-      bottom_right_offset = @location.bottom_right_type.intersection? ? 3.5 : 6.5
+    private def get_transformer(location : QRLocation, dst_size : Int)
+      bottom_right_offset = location.bottom_right_type.intersection? ? 3.5 : 6.5
       q2s = quad_to_square(
         Point.new(3.5, 3.5),
         Point.new(dst_size - 3.5, 3.5),
@@ -32,8 +30,8 @@ module Goishi
         Point.new(3.5, dst_size - 3.5)
       )
       s2q = square_to_quad(
-        @location.top_left, @location.top_right,
-        @location.bottom_right, @location.bottom_left,
+        location.top_left, location.top_right,
+        location.bottom_right, location.bottom_left,
       )
       transform = times(s2q, q2s)
 

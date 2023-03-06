@@ -126,7 +126,7 @@ struct Goishi::Locator
       alignment_quads.select! do |q|
         next unless q.x_scan_count > 1
 
-        pp q
+        #pp q
 
         unit_x, unit_y = q.unit_x(3), q.height
         unit = ((unit_x + unit_y) / 2).round_even
@@ -145,14 +145,14 @@ struct Goishi::Locator
         end
         m1_bottom = temp_y
         m1_unit_y = (m1_bottom - m1_top) / 3
-        puts({m1_unit_y, unit})
+        #puts({m1_unit_y, unit})
         # The left and right tend to be shorter when the pattern is rhombus
         next unless (0.4..1.25).includes?(m1_unit_y / unit)
 
         temp_y = center_y
         color_changes, prev_color = 0, color
         until color_changes == 2
-          c = data[m2_x, temp_y -= 1]
+          c = data[m2_x, temp_y -= 1]?
           next if c == prev_color
 
           color_changes += 1
@@ -162,7 +162,7 @@ struct Goishi::Locator
         temp_y = center_y
         color_changes, prev_color = 0, color
         until color_changes == 2
-          c = data[m2_x, temp_y += 1]
+          c = data[m2_x, temp_y += 1]?
           next if c == prev_color
 
           color_changes += 1
@@ -170,7 +170,7 @@ struct Goishi::Locator
         end
         m2_bottom = temp_y - 1
         m2_unit_y = (m2_bottom - m2_top) / 3
-        puts({m2_unit_y, unit})
+        #puts({m2_unit_y, unit})
         # The middle tend to be longer when the pattern is rhombus
         next unless (0.75..1.6).includes?(m2_unit_y / unit)
 
@@ -185,10 +185,10 @@ struct Goishi::Locator
         end
         m3_bottom = temp_y
         m3_unit_y = (m3_bottom - m3_top) / 3
-        puts({m3_unit_y, unit})
+        #puts({m3_unit_y, unit})
         # The left and right tend to be be shorter when the pattern is rhombus
         next unless (0.4..1.25).includes?(m3_unit_y / unit)
-        puts({m1_unit_y, m3_unit_y})
+        #puts({m1_unit_y, m3_unit_y})
         next unless (-0.4..0.4).includes?((m1_unit_y / unit) - (m3_unit_y / unit))
 
         true

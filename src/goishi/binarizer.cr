@@ -1,5 +1,5 @@
 module Goishi
-  module Preprocessor
+  module Binarizer
     BLOCK_COUNT       = 18
     MIN_DYNAMIC_RANGE = 24
 

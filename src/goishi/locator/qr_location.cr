@@ -6,7 +6,7 @@ module Goishi
     getter bottom_right : Point
     getter bottom_right_type : BottomRightType
     getter unit : Int32
-    getter version : Int32
+    property version : Int32
 
     def initialize(
       @top_left, @top_right,
