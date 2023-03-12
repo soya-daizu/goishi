@@ -3,7 +3,7 @@ require "../src/goishi"
 
 def read_file(input_name : String)
   img = StumpyPNG.read(input_name)
-  matrix = Goishi::Matrix(Tuple(UInt8, UInt8, UInt8)).new(img.width, img.height) do |i|
+  matrix = Goishi::Matrix(Tuple(UInt8, UInt8, UInt8)).new_with_values(img.width, img.height) do |i|
     img.pixels[i].to_rgb8
   end
 
@@ -22,28 +22,28 @@ def extract(input_name : String, output_name : String)
   puts input_name
   matrix = read_file(input_name)
 
-  locator = Goishi::Locator.new(matrix)
+  locator = Goishi::LocatorSession.new
+  locator.set_data(matrix)
   locator.locate_qr(20) do |location|
     puts location
     extractor = Goishi::Extractor.new(matrix)
     extracted_matrix = extractor.extract(location) rescue next
 
-    decoder = Goishi::Decoder.new(extracted_matrix)
-    actual_version = decoder.read_version
-    next if actual_version < 1
-
-    if location.version != actual_version
-      location.version = actual_version
+    begin
+      Goishi::QR::Decoder.decode(extracted_matrix)
+    rescue e : Goishi::QR::Decoder::VersionMismatchError
+      puts e
+      location.version = e.actual_version
       extracted_matrix = extractor.extract(location) rescue next
-      decoder = Goishi::Decoder.new(extracted_matrix)
 
-      # Double check the version corrected
-      next unless decoder.read_version == actual_version
+      Goishi::QR::Decoder.decode(extracted_matrix) rescue next
+    rescue e
+      puts e.inspect_with_backtrace
+      next
     end
 
-    decoder.decode
-
     write_file(output_name, extracted_matrix)
+
     break
   end
 end
@@ -57,5 +57,5 @@ end
 #  extract("examples/assets/rotate#{i}.png", "examples/assets/rotate#{i}_b.png")
 # end
 5.times do |i|
- extract("examples/assets/real_world#{i + 1}.png", "examples/assets/real_world#{i + 1}_b.png")
+  extract("examples/assets/real_world#{i + 1}.png", "examples/assets/real_world#{i + 1}_b.png")
 end
