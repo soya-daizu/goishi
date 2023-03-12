@@ -1,15 +1,26 @@
 require "./locator/*"
 
 module Goishi
-  struct Locator
-    @data : Matrix(UInt8)
+  struct LocatorSession
+    @data : Matrix(UInt8)?
     @finder_quads : Array(Quad)
 
-    def initialize(data : Matrix(UInt8))
+    def initialize
+      @finder_quads = [] of Quad
+    end
+
+    private def data
+      raise "Data not loaded" unless @data
+      @data.not_nil!
+    end
+
+    def set_data(data : Matrix(UInt8))
       center = Point.new(data.size_x / 2, data.size_y / 2)
 
       @data = data
-      @finder_quads = LineScanner.scan_finder_pat(data).to_a.sort_by! do |q|
+      @finder_quads = [] of Quad unless @finder_quads.empty?
+      @finder_quads = @finder_quads.concat(LineScanner.scan_finder_pat(data))
+      @finder_quads.sort_by! do |q|
         q_center = q.center
         score = 0
         # Prefer patterns with b:w:bbb:w:b
@@ -137,8 +148,8 @@ module Goishi
         top_right, top_right_bottom_right_vec,
         bottom_left, bottom_left_bottom_right_vec
       ) rescue return
-      return unless (0...@data.size_x).includes?(intersection.x) &&
-                    (0...@data.size_y).includes?(intersection.y)
+      return unless (0...data.size_x).includes?(intersection.x) &&
+                    (0...data.size_y).includes?(intersection.y)
 
       # Try finding an alignment pattern around D
       alignment_point = refine_bottom_right(intersection, a_center, unit, a.color) if version >= 2
@@ -163,7 +174,7 @@ module Goishi
       temp_point = point
       color_changes, prev_color = 0, color
       until color_changes == 3
-        c = @data[temp_point -= unit_vec]
+        c = data[temp_point -= unit_vec]
         next if c == prev_color
 
         color_changes += 1
@@ -174,7 +185,7 @@ module Goishi
       temp_point = point
       color_changes, prev_color = 0, color
       until color_changes == 3
-        c = @data[temp_point += unit_vec]
+        c = data[temp_point += unit_vec]
         next if c == prev_color
 
         color_changes += 1
@@ -191,24 +202,24 @@ module Goishi
       temp_x = point.x.to_i
       temp_y = point.y.to_i
 
-      until @data[temp_x - 1, temp_y] != color
+      until data[temp_x - 1, temp_y] != color
         temp_x -= 1
       end
       left = temp_x
       temp_x = point.x.to_i
-      until @data[temp_x + 1, temp_y] != color
+      until data[temp_x + 1, temp_y] != color
         temp_x += 1
       end
       right = temp_x
       new_x = ((left + right) / 2)
 
       temp_x = new_x.to_i
-      until @data[temp_x, temp_y - 1] != color
+      until data[temp_x, temp_y - 1] != color
         temp_y -= 1
       end
       top = temp_y
       temp_y = point.y.to_i
-      until @data[temp_x, temp_y + 1] != color
+      until data[temp_x, temp_y + 1] != color
         temp_y += 1
       end
       bottom = temp_y
@@ -223,7 +234,7 @@ module Goishi
       from = est_alignment - 5 * unit
       to = est_alignment + 5 * unit
 
-      alignment_quads = LineScanner.scan_alignment_pat(@data, from, to, color).max_by? do |q|
+      alignment_quads = LineScanner.scan_alignment_pat(data, from, to, color).max_by? do |q|
         q_center = q.center
         score = 100
         # Penalize patterns that are far from the estimated point
@@ -234,7 +245,7 @@ module Goishi
         diff = (q_unit - unit).abs / unit
         score -= diff * 50
         # Penalize patterns that the center does not match the color
-        score -= 100 if @data[q_center.x.to_i, q_center.y.to_i] != q.color
+        score -= 100 if data[q_center.x.to_i, q_center.y.to_i] != q.color
 
         # pp({q, score, distance, q_unit, unit})
 

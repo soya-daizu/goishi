@@ -9,12 +9,10 @@ targets:
     main: examples/extract_test.cr
 
 dependencies:
+  goban:
+    path: ../goban
   stumpy_png:
     github: stumpycr/stumpy_png
-  pix_fmt:
-    github: postmodern/pix_fmt.cr
-  v4l2:
-    github: postmodern/v4l2.cr
 
 crystalline:
   main: examples/extract_test.cr

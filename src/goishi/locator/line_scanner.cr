@@ -1,4 +1,4 @@
-struct Goishi::Locator
+struct Goishi::LocatorSession
   module LineScanner
     def self.scan_finder_pat(data : Matrix(UInt8))
       finder_quads = [] of Quad

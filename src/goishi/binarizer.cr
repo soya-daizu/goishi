@@ -41,8 +41,8 @@ module Goishi
     end
 
     private def self.grayscale(data : Matrix(Tuple(UInt8, UInt8, UInt8)))
-      Matrix(UInt8).new(data.size_x, data.size_y) do |i|
-        r, g, b = data[i]
+      Matrix(UInt8).new_with_values(data.size_x, data.size_y) do |i|
+        r, g, b = data.data[i]
         # Lazy grayscaling according to CIE XYZ
         v = 0.2126 * r + 0.7152 * g + 0.0722 * b
         v.round_even.to_u8
