@@ -46,6 +46,16 @@ module Goishi
       self / self.length
     end
 
+    def min(a : Float64, b : Float64)
+      @x = Math.min(@x, a)
+      @y = Math.min(@y, b)
+    end
+
+    def max(a : Float64, b : Float64)
+      @x = Math.max(@x, a)
+      @y = Math.max(@y, b)
+    end
+
     def self.distance(a : Point, b : Point)
       Point.new(b.x - a.x, b.y - a.y).length
     end

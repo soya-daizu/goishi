@@ -11,6 +11,9 @@ module Goban
     end
 
     def each_row_in_region(from : Goishi::Point, to : Goishi::Point, & : Iterator(Tuple(UInt8, Int32)), Int32 ->)
+      from.max(0, 0)
+      to.min(@size_x - 1, @size_y - 1)
+
       (from.y.to_i..to.y.to_i).each do |y|
         row = (from.x.to_i..to.x.to_i).each.map { |x| {self[x, y], x} }
         yield row, y
@@ -18,6 +21,9 @@ module Goban
     end
 
     def each_column_in_region(from : Goishi::Point, to : Goishi::Point, & : Iterator(Tuple(UInt8, Int32)), Int32 ->)
+      from.max(0, 0)
+      to.min(@size_x - 1, @size_y - 1)
+
       (from.x.to_i..to.x.to_i).each do |x|
         column = (from.y.to_i..to.y.to_i).each.map { |y| {self[x, y], y} }
         yield column, x
