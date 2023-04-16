@@ -7,11 +7,13 @@ module Goishi
     getter bottom_right_type : BottomRightType
     getter unit : Int32
     property version : Int32
+    getter color : UInt8
 
     def initialize(
       @top_left, @top_right,
       @bottom_left, @bottom_right,
-      @unit, @version, @bottom_right_type
+      @unit, @version, @color,
+      @bottom_right_type
     )
     end
 

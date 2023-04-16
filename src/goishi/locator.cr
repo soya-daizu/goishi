@@ -164,7 +164,8 @@ module Goishi
       QRLocation.new(
         top_left, top_right,
         bottom_left, bottom_right,
-        unit, version, bottom_right_type
+        unit, version, a.color,
+        bottom_right_type
       )
     end
 
