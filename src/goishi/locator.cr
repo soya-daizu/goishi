@@ -147,7 +147,8 @@ module Goishi
       intersection = intersection(
         top_right, top_right_bottom_right_vec,
         bottom_left, bottom_left_bottom_right_vec
-      ) rescue return
+      )
+      return unless intersection
       return unless (0...data.size_x).includes?(intersection.x) &&
                     (0...data.size_y).includes?(intersection.y)
 
@@ -261,7 +262,7 @@ module Goishi
       ef, gh = (f - e), (h - g)
 
       deno = Point.cross_prod(ef, gh)
-      raise "Intersection not found" if deno == 0
+      return if deno == 0
 
       s = Point.cross_prod(g - e, gh) / deno
       # t = Point.cross_prod(b - a, a - c) / deno
