@@ -1,6 +1,8 @@
 struct Goishi::LocatorSession
   module LineScanner
-    def self.scan_finder_pat(data : Matrix(UInt8))
+    extend self
+
+    def scan_finder_pat(data : Matrix(UInt8))
       finder_quads = [] of Quad
 
       data.each_row do |row, y|
@@ -63,7 +65,7 @@ struct Goishi::LocatorSession
       finder_quads.each.select { |q| q.x_scan_count > 1 && q.y_scan_count > 1 }
     end
 
-    private def self.scan_finder_line(line : Enumerable(UInt8), & : Int32, Int32, UInt8 ->)
+    private def scan_finder_line(line : Enumerable(UInt8), & : Int32, Int32, UInt8 ->)
       buffer = Slice(Int32).new(5, 0)
       run_length, prev_value = 0, 0_u8
 
@@ -91,7 +93,7 @@ struct Goishi::LocatorSession
       end
     end
 
-    def self.scan_alignment_pat(data : Matrix(UInt8), from : Point, to : Point, color : UInt8)
+    protected def scan_alignment_pat(data : Matrix(UInt8), from : Point, to : Point, color : UInt8)
       alignment_quads = [] of Quad
 
       data.each_row_in_region(from, to) do |row, y|
@@ -126,8 +128,6 @@ struct Goishi::LocatorSession
       alignment_quads.select! do |q|
         next unless q.x_scan_count > 1
 
-        #pp q
-
         unit_x, unit_y = q.unit_x(3), q.height
         unit = ((unit_x + unit_y) / 2).round_even
 
@@ -145,7 +145,6 @@ struct Goishi::LocatorSession
         end
         m1_bottom = temp_y
         m1_unit_y = (m1_bottom - m1_top) / 3
-        #puts({m1_unit_y, unit})
         # The left and right tend to be shorter when the pattern is rhombus
         next unless (0.4..1.25).includes?(m1_unit_y / unit)
 
@@ -170,7 +169,6 @@ struct Goishi::LocatorSession
         end
         m2_bottom = temp_y - 1
         m2_unit_y = (m2_bottom - m2_top) / 3
-        #puts({m2_unit_y, unit})
         # The middle tend to be longer when the pattern is rhombus
         next unless (0.75..1.6).includes?(m2_unit_y / unit)
 
@@ -185,10 +183,8 @@ struct Goishi::LocatorSession
         end
         m3_bottom = temp_y
         m3_unit_y = (m3_bottom - m3_top) / 3
-        #puts({m3_unit_y, unit})
         # The left and right tend to be be shorter when the pattern is rhombus
         next unless (0.4..1.25).includes?(m3_unit_y / unit)
-        #puts({m1_unit_y, m3_unit_y})
         next unless (-0.4..0.4).includes?((m1_unit_y / unit) - (m3_unit_y / unit))
 
         true
@@ -197,7 +193,7 @@ struct Goishi::LocatorSession
       alignment_quads.each
     end
 
-    private def self.scan_alignment_line(line : Enumerable(Tuple(UInt8, Int32)), color : UInt8, & : Int32, Int32 ->)
+    private def scan_alignment_line(line : Enumerable(Tuple(UInt8, Int32)), color : UInt8, & : Int32, Int32 ->)
       buffer = Slice(Int32).new(3, 0)
       run_length, prev_value = 0, 0_u8
 
