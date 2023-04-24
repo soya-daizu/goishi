@@ -54,7 +54,7 @@ module Goishi
 
       BLOCK_COUNT.times do |block_y|
         BLOCK_COUNT.times do |block_x|
-          sum, min, max, count = 0, 255, 0, 0
+          sum, min, max, count = 0, 255_u8, 0_u8, 0
 
           block_size.times do |yy|
             block_size.times do |xx|
@@ -71,7 +71,7 @@ module Goishi
           end
 
           avg = sum / count
-          if max - min <= MIN_DYNAMIC_RANGE
+          if max.to_i - min <= MIN_DYNAMIC_RANGE
             avg = min / 2
 
             if block_y > 0 && block_x > 0
