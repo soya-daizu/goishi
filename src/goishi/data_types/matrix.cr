@@ -10,6 +10,12 @@ module Goban
       self[point.x.to_i, point.y.to_i]?
     end
 
+    def invert
+      @data.map! do |v|
+        v == 0 ? 1_u8 : 0_u8
+      end
+    end
+
     def each_row_in_region(from : Goishi::Point, to : Goishi::Point, & : Iterator(Tuple(UInt8, Int32)), Int32 ->)
       from.max(0, 0)
       to.min(@size_x - 1, @size_y - 1)
