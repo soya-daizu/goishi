@@ -99,12 +99,15 @@ module Goishi
       unit = ((ab_unit + ac_unit) / 2).round_even.to_i
       version = ((version1 + version2) / 2).round_even.to_i
 
-      # Orientation of B and C gained from the left-right and top-bottom endpoints
-      b_angle_lr = b.angle_lr(ac)
-      b_angle_tb = b.angle_tb(ac)
-      c_angle_lr = c.angle_lr(ab)
-      c_angle_tb = c.angle_tb(ab)
-
+      begin
+        # Orientation of B and C gained from the left-right and top-bottom endpoints
+        b_angle_lr = b.angle_lr(ac)
+        b_angle_tb = b.angle_tb(ac)
+        c_angle_lr = c.angle_lr(ab)
+        c_angle_tb = c.angle_tb(ab)
+      rescue
+        return
+      end
       top_left = a_center
       # Rearrange B and C according to sin_sita
       if sin_sita > 0
