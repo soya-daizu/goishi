@@ -98,6 +98,8 @@ module Goishi
 
       unit = ((ab_unit + ac_unit) / 2).round_even.to_i
       version = ((version1 + version2) / 2).round_even.to_i
+      version = Math.max(version, 1)
+      version = Math.min(version, 40)
 
       begin
         # Orientation of B and C gained from the left-right and top-bottom endpoints
@@ -108,6 +110,7 @@ module Goishi
       rescue
         return
       end
+
       top_left = a_center
       # Rearrange B and C according to sin_sita
       if sin_sita > 0
