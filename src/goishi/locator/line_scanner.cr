@@ -185,7 +185,7 @@ struct Goishi::LocatorSession
         m3_unit_y = (m3_bottom - m3_top) / 3
         # The left and right tend to be be shorter when the pattern is rhombus
         next unless (0.4..1.25).includes?(m3_unit_y / unit)
-        next unless (-0.4..0.4).includes?((m1_unit_y / unit) - (m3_unit_y / unit))
+        next unless ((m1_unit_y - m3_unit_y).abs / unit) <= 0.4
 
         true
       end

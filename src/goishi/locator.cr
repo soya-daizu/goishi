@@ -49,7 +49,7 @@ module Goishi
 
           size1 = (q1.width + q1.height) / 2
           size2 = (q2.width + q2.height) / 2
-          next unless (0..1.3).includes?((size2 - size1).abs / size1)
+          next unless ((size2 - size1).abs / size1) <= 1.3
 
           (j + 1...@finder_quads.size).each do |k|
             return if candidates_count >= max_candidates
@@ -58,7 +58,7 @@ module Goishi
             next unless q3.color == q1.color
 
             size3 = (q3.width + q3.height) / 2
-            next unless (0..1.3).includes?((size3 - size1).abs / size1)
+            next unless ((size3 - size1).abs / size1) <= 1.3
 
             location = test_finder_arrangement(q1, q2, q3)
             location = test_finder_arrangement(q2, q1, q3) unless location
