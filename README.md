@@ -1,6 +1,8 @@
-# goishi
+# Goishi
 
-TODO: Write a description here
+An experimental QR Code locator/extractor library written purely in Crystal. It works on top of [Goban](https://github.com/soya-daizu/goban), a QR Code encoder/decoder library, and takes a matrix of each source image pixel to locate and extract QR Code symbols in the image. 
+
+The library is already capable of locating/extracting regular QR Code symbols, however the implementation is not complete and may fail with some edge cases. The goal is to finish the implementation for regular QR Code and then expand it to support other QR Code types such as Micro QR and rMQR Code.
 
 ## Installation
 
@@ -9,22 +11,14 @@ TODO: Write a description here
    ```yaml
    dependencies:
      goishi:
-       github: your-github-user/goishi
+       github: soya-daizu/goishi
    ```
 
 2. Run `shards install`
 
 ## Usage
 
-```crystal
-require "goishi"
-```
-
-TODO: Write usage instructions here
-
-## Development
-
-TODO: Write development instructions here
+See `examples/extract_test.cr` for the usage with [stumpy\_png](https://github.com/stumpycr/stumpy_png) to read, locate/extract, and decode QR Codes in the image.
 
 ## Contributing
 
@@ -36,4 +30,4 @@ TODO: Write development instructions here
 
 ## Contributors
 
-- [soya_daizu](https://github.com/your-github-user) - creator and maintainer
+- [soya_daizu](https://github.com/soya-daizu) - creator and maintainer
