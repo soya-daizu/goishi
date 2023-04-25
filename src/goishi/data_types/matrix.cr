@@ -1,5 +1,20 @@
 module Goban
   struct Matrix(T)
+    def self.new_with_values(size_x, size_y, & : Int32, Int32, Int32 -> T)
+      x, y = 0, 0
+      data = Slice.new(size_x * size_y) do |i|
+        v = yield i, x, y
+        x += 1
+        if x == size_x
+          x = 0
+          y += 1
+        end
+        v
+      end
+
+      self.new(size_x, size_y, data: data)
+    end
+
     @[AlwaysInline]
     def [](point : Goishi::Point)
       self[point.x.to_i, point.y.to_i]
