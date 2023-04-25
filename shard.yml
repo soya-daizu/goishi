@@ -10,7 +10,11 @@ targets:
 
 dependencies:
   goban:
-    path: ../goban
+    github: soya-daizu/goban
+    branch: develop
+    # path: ../goban
+
+development_dependencies:
   stumpy_png:
     github: stumpycr/stumpy_png
 
