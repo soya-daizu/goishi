@@ -35,11 +35,12 @@ def extract(input_name : String)
     rescue e : Goishi::QR::Decoder::VersionMismatchError
       location.version = e.actual_version
       extracted_matrix = extractor.extract(location)
-
       Goishi::QR::Decoder.decode(extracted_matrix).segments rescue next
     rescue e
       puts e.inspect_with_backtrace
-      next
+      extracted_matrix = extractor.extract(location)
+      extracted_matrix.flip_tr_bl
+      Goishi::QR::Decoder.decode(extracted_matrix).segments rescue next
     end
     p! segments.join(&.text)
 

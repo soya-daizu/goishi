@@ -16,6 +16,17 @@ module Goban
       end
     end
 
+    def flip_tr_bl
+      (0...@size_x).each do |x|
+        (x...@size_y).each do |y|
+          a, b = self[x, y], self[y, x]
+          next if a == b
+          self[x, y] = a == 0_u8 ? 1_u8 : 0_u8
+          self[y, x] = b == 0_u8 ? 1_u8 : 0_u8
+        end
+      end
+    end
+
     def each_row_in_region(from : Goishi::Point, to : Goishi::Point, & : Iterator(Tuple(UInt8, Int32)), Int32 ->)
       from.max(0, 0)
       to.min(@size_x - 1, @size_y - 1)
