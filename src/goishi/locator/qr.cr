@@ -35,13 +35,13 @@ struct Goishi::LocatorSession
       end
     end
 
-    private def test_finder_qr(a : Quad, b : Quad, c : Quad)
-      a_center = refine_center(a.center, a.color)
-      b_center = refine_center(b.center, b.color)
-      c_center = refine_center(c.center, c.color)
+    private def test_finder_qr(q1 : Quad, q2 : Quad, q3 : Quad)
+      a = refine_center(q1.center, q1.color)
+      b = refine_center(q2.center, q1.color)
+      c = refine_center(q3.center, q1.color)
 
       # Define vectors
-      ab, ac = (b_center - a_center), (c_center - a_center)
+      ab, ac = (b - a), (c - a)
       ab_len, ac_len = ab.length, ac.length
       ab_vec, ac_vec = ab.unit_vec, ac.unit_vec
 
@@ -50,13 +50,13 @@ struct Goishi::LocatorSession
       return unless (0.85..1.15).includes?(sin_sita.abs)
 
       # Calculate unit size (= module size) and version
-      a_unit_ab = refine_unit(a_center, ab_vec, a.color)
-      b_unit_ab = refine_unit(b_center, ab_vec, a.color)
+      a_unit_ab = refine_unit(a, ab_vec, q1.color)
+      b_unit_ab = refine_unit(b, ab_vec, q1.color)
       ab_unit = (a_unit_ab + b_unit_ab) / 2
       version1 = (ab_len / ab_unit - 10) / 4
 
-      a_unit_ac = refine_unit(a_center, ac_vec, a.color)
-      c_unit_ac = refine_unit(c_center, ac_vec, a.color)
+      a_unit_ac = refine_unit(a, ac_vec, q1.color)
+      c_unit_ac = refine_unit(c, ac_vec, q1.color)
       ac_unit = (a_unit_ac + c_unit_ac) / 2
       version2 = (ac_len / ac_unit - 10) / 4
 
@@ -67,73 +67,64 @@ struct Goishi::LocatorSession
 
       begin
         # Orientation of B and C gained from the left-right and top-bottom endpoints
-        b_angle_lr = b.y_angle(ac)
-        b_angle_tb = b.x_angle(ac)
-        c_angle_lr = c.y_angle(ab)
-        c_angle_tb = c.x_angle(ab)
+        b_angle_lr = q2.y_angle(ac)
+        b_angle_tb = q2.x_angle(ac)
+        c_angle_lr = q3.y_angle(ab)
+        c_angle_tb = q3.x_angle(ab)
       rescue
         return
       end
 
-      top_left = a_center
       # Rearrange B and C according to sin_sita
       if sin_sita > 0
-        top_right = c_center
-        bottom_left = b_center
+        b, c = c, b
 
         # Make the vector of BD and CD
         if (0.7..1.3).includes?(Point.angle_between(ac, c_angle_lr).abs) &&
            (0.7..1.3).includes?(Point.angle_between(ab, b_angle_tb).abs)
-          top_right_bottom_right_vec = top_right + c_angle_lr
-          bottom_left_bottom_right_vec = bottom_left + b_angle_tb
+          bd_vec = b + c_angle_lr
+          cd_vec = c + b_angle_tb
         elsif (0.7..1.3).includes?(Point.angle_between(ac, c_angle_tb).abs) &&
               (0.7..1.3).includes?(Point.angle_between(ab, b_angle_lr).abs)
-          top_right_bottom_right_vec = top_right + c_angle_tb
-          bottom_left_bottom_right_vec = bottom_left + b_angle_lr
+          bd_vec = b + c_angle_tb
+          cd_vec = c + b_angle_lr
         else
           return
         end
       else
-        top_right = b_center
-        bottom_left = c_center
-
         # Make the vector of BD and CD
         if (0.7..1.3).includes?(Point.angle_between(ab, b_angle_lr).abs) &&
            (0.7..1.3).includes?(Point.angle_between(ac, c_angle_tb).abs)
-          top_right_bottom_right_vec = top_right + b_angle_lr
-          bottom_left_bottom_right_vec = bottom_left + c_angle_tb
+          bd_vec = b + b_angle_lr
+          cd_vec = c + c_angle_tb
         elsif (0.7..1.3).includes?(Point.angle_between(ab, b_angle_tb).abs) &&
               (0.7..1.3).includes?(Point.angle_between(ac, c_angle_lr).abs)
-          top_right_bottom_right_vec = top_right + b_angle_tb
-          bottom_left_bottom_right_vec = bottom_left + c_angle_lr
+          bd_vec = b + b_angle_tb
+          cd_vec = c + c_angle_lr
         else
           return
         end
       end
 
       # This will be the point D
-      intersection = intersection(
-        top_right, top_right_bottom_right_vec,
-        bottom_left, bottom_left_bottom_right_vec
-      )
+      intersection = intersection(b, bd_vec, c, cd_vec)
       return unless intersection
       return unless (0...data.size_x).includes?(intersection.x) &&
                     (0...data.size_y).includes?(intersection.y)
 
       # Try finding an alignment pattern around D
-      alignment_point = refine_bottom_right(intersection, a_center, unit, a.color) if version >= 2
+      alignment_point = refine_bottom_right(intersection, a, unit, q1.color) if version >= 2
       if alignment_point
-        bottom_right = alignment_point
+        d = alignment_point
         bottom_right_offset = 6.5
       else
-        bottom_right = intersection
+        d = intersection
         bottom_right_offset = 3.5
       end
 
       QRLocation.new(
-        top_left, top_right,
-        bottom_left, bottom_right,
-        unit, version, a.color,
+        a, b, c, d,
+        unit, version, q1.color,
         {3.5, 3.5, 3.5, bottom_right_offset}
       )
     end
