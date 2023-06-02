@@ -3,6 +3,7 @@ require "./locator/*"
 module Goishi
   struct LocatorSession
     include QRLocator
+    include MQRLocator
 
     @data : Matrix(UInt8)?
     @finder_quads : Array(Quad)
