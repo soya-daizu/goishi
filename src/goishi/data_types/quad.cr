@@ -142,10 +142,12 @@ module Goishi
     end
 
     macro angle_of(prop)
-      scans = [@first, @min, @max, @last]
-      scans.uniq!.sort_by!(&.y).reject! do |a|
-        scans.any? { |b| a != b && a.y == b.y - 1 && b.{{prop.id}} == a.{{prop.id}} }
+      scans = [@first, @min, @max, @last].uniq!.sort_by!(&.y)
+      scans_with_index = scans.map_with_index { |v, i| {v, i} }
+      scans_with_index.reject! do |a, i|
+        scans_with_index.any? { |b, j| a != b && i == j - 1 && b.{{prop.id}} == a.{{prop.id}} }
       end
+      scans = scans_with_index.map(&.[0])
 
       case scans.size
       when 1
@@ -211,10 +213,12 @@ module Goishi
     end
 
     macro angle_of(prop)
-      scans = [@first, @min, @max, @last]
-      scans.uniq!.sort_by!(&.x).reject! do |a|
-        scans.any? { |b| a != b && a.x == b.x - 1 && b.{{prop.id}} == a.{{prop.id}} }
+      scans = [@first, @min, @max, @last].uniq!.sort_by!(&.x)
+      scans_with_index = scans.map_with_index { |v, i| {v, i} }
+      scans_with_index.reject! do |a, i|
+        scans_with_index.any? { |b, j| a != b && i == j - 1 && b.{{prop.id}} == a.{{prop.id}} }
       end
+      scans = scans_with_index.map(&.[0])
 
       case scans.size
       when 1
