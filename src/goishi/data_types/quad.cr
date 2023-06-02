@@ -75,7 +75,7 @@ module Goishi
     end
 
     # Vector of the quad's tilt to y direction based on its left and right endpoints
-    def angle_lr(clue : Point)
+    def y_angle(clue : Point)
       a1 = @left_scans.angle_of_left(clue)
       a2 = @right_scans.angle_of_right(clue)
 
@@ -89,7 +89,7 @@ module Goishi
     end
 
     # Vector of the quad's tilt to x direction based on its top and bottom endpoints
-    def angle_tb(clue : Point)
+    def x_angle(clue : Point)
       a1 = @top_scans.angle_of_top(clue)
       a2 = @bottom_scans.angle_of_bottom(clue)
 

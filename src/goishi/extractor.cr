@@ -22,12 +22,11 @@ module Goishi
     end
 
     private def get_transformer(location : QRLocation, dst_size : Int)
-      bottom_right_offset = location.bottom_right_type.intersection? ? 3.5 : 6.5
       q2s = quad_to_square(
-        Point.new(3.5, 3.5),
-        Point.new(dst_size - 3.5, 3.5),
-        Point.new(dst_size - bottom_right_offset, dst_size - bottom_right_offset),
-        Point.new(3.5, dst_size - 3.5)
+        Point.new(location.offset[0], location.offset[0]),
+        Point.new(dst_size - location.offset[1], location.offset[1]),
+        Point.new(dst_size - location.offset[3], dst_size - location.offset[3]),
+        Point.new(location.offset[2], dst_size - location.offset[2])
       )
       s2q = square_to_quad(
         location.top_left, location.top_right,
