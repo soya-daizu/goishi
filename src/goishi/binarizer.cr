@@ -3,15 +3,15 @@ module Goishi
     BLOCK_COUNT       = 18
     MIN_DYNAMIC_RANGE = 24
 
-    # Creates a new binarized matrix from a matrix of Tuples of each containing
+    # Creates a new binarized canvas from a matrix of Tuples of each containing
     # RGB values of the pixel in the image.
-    def self.binarize(data : Matrix(Tuple(UInt8, UInt8, UInt8)))
+    def self.binarize(data : Canvas(Tuple(UInt8, UInt8, UInt8)))
       data = self.grayscale(data)
 
       block_size = (Math.max(data.size_x, data.size_y) / BLOCK_COUNT).ceil.to_i
       avg_blocks = self.make_avg_blocks(data, block_size)
 
-      binarized = Matrix(UInt8).new(data.size_x, data.size_y, 0_u8)
+      binarized = Canvas(UInt8).new(data.size_x, data.size_y, 0_u8)
 
       BLOCK_COUNT.times do |block_y|
         BLOCK_COUNT.times do |block_x|
@@ -40,8 +40,8 @@ module Goishi
       binarized
     end
 
-    private def self.grayscale(data : Matrix(Tuple(UInt8, UInt8, UInt8)))
-      Matrix(UInt8).new_with_values(data.size_x, data.size_y) do |i|
+    private def self.grayscale(data : Canvas(Tuple(UInt8, UInt8, UInt8)))
+      Canvas(UInt8).new_with_values(data.size_x, data.size_y) do |i|
         r, g, b = data.data[i]
         # Lazy grayscaling according to CIE XYZ
         v = 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -49,8 +49,8 @@ module Goishi
       end
     end
 
-    private def self.make_avg_blocks(data : Matrix(UInt8), block_size : Int)
-      block_avgs = Matrix(UInt8).new(BLOCK_COUNT, BLOCK_COUNT, 0_u8)
+    private def self.make_avg_blocks(data : Canvas(UInt8), block_size : Int)
+      block_avgs = Canvas(UInt8).new(BLOCK_COUNT, BLOCK_COUNT, 0_u8)
 
       BLOCK_COUNT.times do |block_y|
         BLOCK_COUNT.times do |block_x|

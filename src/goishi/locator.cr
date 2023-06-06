@@ -5,7 +5,7 @@ module Goishi
     include QRLocator
     include MQRLocator
 
-    @data : Matrix(UInt8)?
+    @data : Canvas(UInt8)?
     @finder_quads : Array(Quad)
 
     def initialize
@@ -17,7 +17,7 @@ module Goishi
       @data.not_nil!
     end
 
-    def set_data(data : Matrix(UInt8))
+    def set_data(data : Canvas(UInt8))
       center = Point.new(data.size_x / 2, data.size_y / 2)
 
       @data = data
@@ -33,7 +33,9 @@ module Goishi
         # Prefer patterns that are detected with more scan lines
         score += (q.x_scan_count + q.y_scan_count) ** 2
         # Penalize patterns that the center does not match the color
-        score -= 100 if data[q_center.x.to_i, q_center.y.to_i] != q.color
+        score -= 100 if data[q_center]? != q.color
+
+        score += (1.0 - (q.width / q.height)).abs * 25
 
         -score.round_even.to_i
       end
@@ -44,7 +46,7 @@ module Goishi
       temp_point = point
       color_changes, prev_color = 0, color
       until color_changes == 3
-        c = data[temp_point -= vec]
+        c = data[temp_point -= vec]? || break
         next if c == prev_color
 
         color_changes += 1
@@ -55,7 +57,7 @@ module Goishi
       temp_point = point
       color_changes, prev_color = 0, color
       until color_changes == 3
-        c = data[temp_point += vec]
+        c = data[temp_point += vec]? || break
         next if c == prev_color
 
         color_changes += 1
@@ -72,24 +74,24 @@ module Goishi
       temp_x = point.x.to_i
       temp_y = point.y.to_i
 
-      until data[temp_x - 1, temp_y] != color
+      until data[temp_x - 1, temp_y]? != color
         temp_x -= 1
       end
       left = temp_x
       temp_x = point.x.to_i
-      until data[temp_x + 1, temp_y] != color
+      until data[temp_x + 1, temp_y]? != color
         temp_x += 1
       end
       right = temp_x
       new_x = ((left + right) / 2)
 
       temp_x = new_x.to_i
-      until data[temp_x, temp_y - 1] != color
+      until data[temp_x, temp_y - 1]? != color
         temp_y -= 1
       end
       top = temp_y
       temp_y = point.y.to_i
-      until data[temp_x, temp_y + 1] != color
+      until data[temp_x, temp_y + 1]? != color
         temp_y += 1
       end
       bottom = temp_y
@@ -105,7 +107,8 @@ module Goishi
       deno = Point.cross_prod(ef, gh)
       return if deno == 0
 
-      s = Point.cross_prod(g - e, gh) / deno
+      eg = g - e
+      s = Point.cross_prod(eg, gh) / deno
       # t = Point.cross_prod(b - a, a - c) / deno
 
       Point.new(e.x + s * ef.x, e.y + s * ef.y)

@@ -1,5 +1,5 @@
 module Goban
-  struct Matrix(T)
+  struct Canvas(T)
     def self.new_with_values(size_x, size_y, & : Int32, Int32, Int32 -> T)
       x, y = 0, 0
       data = Slice.new(size_x * size_y) do |i|
@@ -16,12 +16,7 @@ module Goban
     end
 
     @[AlwaysInline]
-    def [](point : Goishi::Point)
-      self[point.x.to_i, point.y.to_i]
-    end
-
-    @[AlwaysInline]
-    def [](point : Goishi::Point)
+    def []?(point : Goishi::Point)
       self[point.x.to_i, point.y.to_i]?
     end
 

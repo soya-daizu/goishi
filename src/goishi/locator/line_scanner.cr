@@ -2,7 +2,7 @@ struct Goishi::LocatorSession
   module LineScanner
     extend self
 
-    def scan_finder_pat(data : Matrix(UInt8))
+    def scan_finder_pat(data : Canvas(UInt8))
       finder_quads = [] of Quad
 
       data.each_row do |row, y|
@@ -93,7 +93,7 @@ struct Goishi::LocatorSession
       end
     end
 
-    protected def scan_alignment_pat(data : Matrix(UInt8), from : Point, to : Point, color : UInt8)
+    protected def scan_alignment_pat(data : Canvas(UInt8), from : Point, to : Point, color : UInt8)
       alignment_quads = [] of Quad
 
       data.each_row_in_region(from, to) do |row, y|

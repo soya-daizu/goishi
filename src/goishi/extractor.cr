@@ -1,6 +1,6 @@
 module Goishi
   struct Extractor
-    @data : Matrix(UInt8)
+    @data : Canvas(UInt8)
 
     def initialize(@data)
     end
@@ -9,7 +9,7 @@ module Goishi
       # TODO: change dst_size based on the qr type
       # dst_size = 17 + location.version * 4
       dst_size = 9 + location.version * 2
-      dst = Matrix(UInt8).new(dst_size, dst_size, 0_u8)
+      dst = Canvas(UInt8).new(dst_size, dst_size, 0_u8)
 
       transformer = get_transformer(location, dst_size)
 
