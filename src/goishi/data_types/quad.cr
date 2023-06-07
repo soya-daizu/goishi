@@ -79,12 +79,6 @@ module Goishi
       a1 = @left_scans.angle_of_left(clue)
       a2 = @right_scans.angle_of_right(clue)
 
-      # If a1 and a2 cancel out each other, use the clue vector to figure out which one to use
-      if (a1 >= 0 && a2 <= 0) || (a1 <= 0 && a2 >= 0)
-        clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
-        return clue_rising ? Point.new(Math.max(a1, a2), 1) : Point.new(Math.min(a1, a2), 1)
-      end
-
       Point.new((a1 + a2) / 2, 1)
     end
 
@@ -92,12 +86,6 @@ module Goishi
     def x_angle(clue : Point)
       a1 = @top_scans.angle_of_top(clue)
       a2 = @bottom_scans.angle_of_bottom(clue)
-
-      # If a1 and a2 cancel out each other, use the clue vector to figure out which one to use
-      if (a1 >= 0 && a2 <= 0) || (a1 <= 0 && a2 >= 0)
-        clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
-        return clue_rising ? Point.new(1, Math.max(a1, a2)) : Point.new(1, Math.min(a1, a2))
-      end
 
       Point.new(1, (a1 + a2) / 2)
     end
@@ -155,6 +143,7 @@ module Goishi
       when 2
         (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].y - scans[0].y)
       when 3
+        # The scans are canceling out each other, so we use the clue vector to figure out which one to use
         v1 = (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].y - scans[0].y)
         v2 = (scans[2].{{prop.id}} - scans[1].{{prop.id}}) / (scans[2].y - scans[1].y)
 
@@ -226,6 +215,7 @@ module Goishi
       when 2
         (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].x - scans[0].x)
       when 3
+        # The scans are canceling out each other, so we use the clue vector to figure out which one to use
         v1 = (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].x - scans[0].x)
         v2 = (scans[2].{{prop.id}} - scans[1].{{prop.id}}) / (scans[2].x - scans[1].x)
 
