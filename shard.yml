@@ -17,6 +17,10 @@ dependencies:
 development_dependencies:
   stumpy_png:
     github: stumpycr/stumpy_png
+  stumpy_jpeg:
+    github: stumpycr/stumpy_jpeg
+  stumpy_utils:
+    github: stumpycr/stumpy_utils
 
 crystalline:
   main: examples/extract_test.cr
