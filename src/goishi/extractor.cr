@@ -7,8 +7,8 @@ module Goishi
 
     def extract(location : QRLocation)
       # TODO: change dst_size based on the qr type
-      # dst_size = 17 + location.version * 4
-      dst_size = 9 + location.version * 2
+      dst_size = 17 + location.version * 4
+      # dst_size = 9 + location.version * 2
       dst = Canvas(UInt8).new(dst_size, dst_size, 0_u8)
 
       transformer = get_transformer(location, dst_size)
@@ -24,13 +24,13 @@ module Goishi
     end
 
     private def get_transformer(location : QRLocation, dst_size : Int)
-      q2s = quad_to_square(
+      q2s = scangroup_to_square(
         Point.new(location.offset[0], location.offset[0]),
         Point.new(dst_size - location.offset[1], location.offset[1]),
         Point.new(dst_size - location.offset[3], dst_size - location.offset[3]),
         Point.new(location.offset[2], dst_size - location.offset[2])
       )
-      s2q = square_to_quad(
+      s2q = square_to_scangroup(
         location.top_left, location.top_right,
         location.bottom_right, location.bottom_left,
       )
@@ -46,8 +46,8 @@ module Goishi
       }
     end
 
-    private def quad_to_square(p1 : Point, p2 : Point, p3 : Point, p4 : Point)
-      s2q = square_to_quad(p1, p2, p3, p4)
+    private def scangroup_to_square(p1 : Point, p2 : Point, p3 : Point, p4 : Point)
+      s2q = square_to_scangroup(p1, p2, p3, p4)
 
       PerspectiveTransform.new(
         a11: s2q.a22 * s2q.a33 - s2q.a23 * s2q.a32,
@@ -62,7 +62,7 @@ module Goishi
       )
     end
 
-    private def square_to_quad(p1 : Point, p2 : Point, p3 : Point, p4 : Point)
+    private def square_to_scangroup(p1 : Point, p2 : Point, p3 : Point, p4 : Point)
       dx3 = p1.x - p2.x + p3.x - p4.x
       dy3 = p1.y - p2.y + p3.y - p4.y
 

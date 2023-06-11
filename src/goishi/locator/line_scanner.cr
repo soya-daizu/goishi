@@ -3,11 +3,11 @@ struct Goishi::LocatorSession
     extend self
 
     def scan_finder_pat(data : Canvas(UInt8))
-      finder_quads = [] of Quad
+      finder_scangroups = [] of ScanGroup
 
       data.each_row do |row, y|
         self.scan_finder_line(row) do |left, right, color|
-          extending_quad_idx = finder_quads.index do |q|
+          extending_scangroup_idx = finder_scangroups.index do |q|
             next unless q.color == color
 
             next unless q.bottom == y - 1 || q.bottom == y - 2
@@ -22,23 +22,23 @@ struct Goishi::LocatorSession
             true
           end
 
-          if extending_quad_idx
-            extending_quad = finder_quads[extending_quad_idx]
+          if extending_scangroup_idx
+            extending_scangroup = finder_scangroups[extending_scangroup_idx]
             x_line = XScan.new(y, left, right)
-            extending_quad.extend(x_line)
+            extending_scangroup.extend(x_line)
 
-            finder_quads[extending_quad_idx] = extending_quad
+            finder_scangroups[extending_scangroup_idx] = extending_scangroup
           else
-            new_quad = Quad.new(y, y, left, right, color)
+            new_scangroup = ScanGroup.new(y, y, left, right, color)
 
-            finder_quads.unshift(new_quad)
+            finder_scangroups.unshift(new_scangroup)
           end
         end
       end
 
       data.each_column do |column, x|
         self.scan_finder_line(column) do |top, bottom, color|
-          extending_quad_idx = finder_quads.index do |q|
+          extending_scangroup_idx = finder_scangroups.index do |q|
             next unless q.color == color
 
             lr_err = q.unit_x * 2
@@ -52,17 +52,17 @@ struct Goishi::LocatorSession
 
             true
           end
-          next unless extending_quad_idx
+          next unless extending_scangroup_idx
 
-          extending_quad = finder_quads[extending_quad_idx]
+          extending_scangroup = finder_scangroups[extending_scangroup_idx]
           y_line = YScan.new(x, top, bottom)
-          extending_quad.extend(y_line)
+          extending_scangroup.extend(y_line)
 
-          finder_quads[extending_quad_idx] = extending_quad
+          finder_scangroups[extending_scangroup_idx] = extending_scangroup
         end
       end
 
-      finder_quads.each.select { |q| q.x_scan_count > 1 && q.y_scan_count > 1 }
+      finder_scangroups.each.select { |q| q.x_scan_count > 1 && q.y_scan_count > 1 }
     end
 
     private def scan_finder_line(line : Enumerable(UInt8), & : Int32, Int32, UInt8 ->)
@@ -94,11 +94,11 @@ struct Goishi::LocatorSession
     end
 
     protected def scan_alignment_pat(data : Canvas(UInt8), from : Point, to : Point, color : UInt8)
-      alignment_quads = [] of Quad
+      alignment_scangroups = [] of ScanGroup
 
       data.each_row_in_region(from, to) do |row, y|
         self.scan_alignment_line(row, color) do |left, right|
-          extending_quad_idx = alignment_quads.index do |q|
+          extending_scangroup_idx = alignment_scangroups.index do |q|
             next unless q.bottom == y - 1
 
             err = q.unit_x
@@ -111,21 +111,21 @@ struct Goishi::LocatorSession
             true
           end
 
-          if extending_quad_idx
-            extending_quad = alignment_quads[extending_quad_idx]
+          if extending_scangroup_idx
+            extending_scangroup = alignment_scangroups[extending_scangroup_idx]
             x_line = XScan.new(y, left, right)
-            extending_quad.extend(x_line)
+            extending_scangroup.extend(x_line)
 
-            alignment_quads[extending_quad_idx] = extending_quad
+            alignment_scangroups[extending_scangroup_idx] = extending_scangroup
           else
-            new_quad = Quad.new(y, y, left, right, color)
+            new_scangroup = ScanGroup.new(y, y, left, right, color)
 
-            alignment_quads.unshift(new_quad)
+            alignment_scangroups.unshift(new_scangroup)
           end
         end
       end
 
-      alignment_quads.select! do |q|
+      alignment_scangroups.select! do |q|
         next unless q.x_scan_count > 1
 
         unit_x, unit_y = q.unit_x(3), q.height
@@ -190,7 +190,7 @@ struct Goishi::LocatorSession
         true
       end
 
-      alignment_quads.each
+      alignment_scangroups.each
     end
 
     private def scan_alignment_line(line : Enumerable(Tuple(UInt8, Int32)), color : UInt8, & : Int32, Int32 ->)

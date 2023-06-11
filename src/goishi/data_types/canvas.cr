@@ -17,7 +17,7 @@ module Goban
 
     @[AlwaysInline]
     def []?(point : Goishi::Point)
-      self[point.x.to_i, point.y.to_i]?
+      self[point.x.round_away.to_i, point.y.round_away.to_i]?
     end
 
     def invert
