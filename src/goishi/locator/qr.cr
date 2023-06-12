@@ -113,9 +113,9 @@ struct Goishi::LocatorSession
       # Visualizer.export
 
       QRLocation.new(
+      QRLocation.new(QR,
         a_quad.center, b_quad.center, c_quad.center, d,
-        version, color,
-        {3.5, 3.5, 3.5, bottom_right_offset}
+        version, color, {3.5, 3.5, 3.5, bottom_right_offset}
       )
     end
 
