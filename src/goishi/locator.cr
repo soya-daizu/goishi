@@ -84,38 +84,38 @@ module Goishi
       vec = Point.new(1, 0)
       ray_groups = [[scan_finder_edges(center, vec, sg.color)]]
       179.times do |i|
+        # Rotate the vector by 1°
         vec = Point.new(
           vec.x * Math.cos(Math::PI / 180) - vec.y * Math.sin(Math::PI / 180),
           vec.x * Math.sin(Math::PI / 180) + vec.y * Math.cos(Math::PI / 180),
         )
 
+        # Find the two edges of the finder pattern in the current vector's direction
+        # and group them together by their length
         pair, length = scan_finder_edges(center, vec, sg.color)
-        diff = length - ray_groups.last[0][1]
-        if diff == 0
+        if length == ray_groups.last[0][1]
           ray_groups.last.push({pair, length})
         else
           ray_groups.push([{pair, length}])
         end
       end
-      ray_groups.push(ray_groups[0])
 
       scored_rays = [] of Tuple(Tuple(Point, Point), Float64)
-      (0...ray_groups.size - 2).each do |i|
-        ray_lengths = {-1, 0, 1}.map { |j| ray_groups[i + j][0][1] }
-        next unless ray_lengths[0] < ray_lengths[1] && ray_lengths[1] > ray_lengths[2]
+      (0...ray_groups.size).each do |i|
+        ray_lengths = {-2, -1, 0, 1, 2}.map { |j| (ray_groups[i + j]? || ray_groups[j - 1])[0][1] }
+        next unless ray_lengths[1] < ray_lengths[2] && ray_lengths[2] > ray_lengths[3]
 
         pair, _ = ray_groups[i][ray_groups[i].size // 2]
         score = (pair[1] - pair[0]).length
-        score += (ray_lengths[1] - ray_lengths[0])
-        score += (ray_lengths[1] - ray_lengths[2])
-        score *= 1.1 if ray_lengths[0] == ray_lengths[2]
+        score += (ray_lengths[2] - ray_lengths[1])
+        score += (ray_lengths[2] - ray_lengths[3])
+        score *= 1.1 if ray_lengths[1] == ray_lengths[3]
 
-        ray_lengths = {-2, -1, 1, 2}.map { |j| ray_groups[i + j][0][1] }
-        if ray_lengths[0] < ray_lengths[1] && ray_lengths[2] > ray_lengths[3]
+        if ray_lengths[0] < ray_lengths[1] && ray_lengths[3] > ray_lengths[4]
           score += (ray_lengths[1] - ray_lengths[0])
-          score += (ray_lengths[2] - ray_lengths[3])
-          score *= 1.1 if ray_lengths[0] == ray_lengths[3]
-          score *= 1.1 if ray_lengths[1] == ray_lengths[2]
+          score += (ray_lengths[3] - ray_lengths[4])
+          score *= 1.1 if ray_lengths[0] == ray_lengths[4]
+          score *= 1.1 if ray_lengths[1] == ray_lengths[3]
         end
 
         scored_rays.push({pair, score})
