@@ -89,23 +89,26 @@ module Goishi
       center = refine_center(sg.center, sg.color)
 
       vec = Point.new(1, 0)
-      ray_groups = [[scan_finder_edges(center, vec, sg.color) || return]]
-      179.times do |i|
-        # Rotate the vector by 1°
-        vec = Point.new(
-          vec.x * Math.cos(Math::PI / 180) - vec.y * Math.sin(Math::PI / 180),
-          vec.x * Math.sin(Math::PI / 180) + vec.y * Math.cos(Math::PI / 180),
-        )
-
+      ray_groups = [] of Array(Tuple(Tuple(Point, Point), Int32))
+      passed_count = 0
+      180.times do |i|
         # Find the two edges of the finder pattern in the current vector's direction
         # and group them together by their length
-        pair, length = scan_finder_edges(center, vec, sg.color) || return
-        if length == ray_groups.last[0][1]
+        pair, length, passed = scan_finder_edges(center, vec, sg.color) || return
+        if !ray_groups.empty? && length == ray_groups.last[0][1]
           ray_groups.last.push({pair, length})
         else
           ray_groups.push([{pair, length}])
         end
+        passed_count += 1 if passed
+
+        # Rotate the vector by 1°
+        vec = Point.new(
+          vec.x * Math.cos(Math::PI / 180) - vec.y * Math.sin(Math::PI / 180),
+          vec.x * Math.sin(Math::PI / 180) + vec.y * Math.cos(Math::PI / 180),
+        ) if i < 179
       end
+      return if passed_count < 135
 
       scored_rays = [] of Tuple(Tuple(Point, Point), Float64)
       (0...ray_groups.size).each do |i|
@@ -171,6 +174,8 @@ module Goishi
       len2 = len2_1 + len2_2 + len2_3
       e2 = temp_point - vec
 
+      return if (len2 - len1).abs / Math.min(len1, len2) > 2
+
       len = len1 + len2 + 1
       unit = len / 7
       passed = {
@@ -180,14 +185,11 @@ module Goishi
         {1, len2_2},
         {1, len2_3},
       }.all? do |r, l|
-        range = (((r - 1) * unit).round_even..((r + 1) * unit).round_even)
+        range = (((r - 0.5) * unit).round_even..((r + 0.5) * unit).round_even)
         range.includes?(l)
       end
-      return unless passed
 
-      return if (len2 - len1).abs / Math.min(len1, len2) > 2
-
-      { {e1, e2}, len1 + len2 + 1 }
+      { {e1, e2}, len1 + len2 + 1, passed }
     end
   end
 end
