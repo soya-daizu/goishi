@@ -6,10 +6,10 @@ module Goishi
     include MQRLocator
 
     @data : Canvas(UInt8)?
-    @finder_scangroups : Array(ScanGroup)
+    @finder_quads : Array(Quad)
 
     def initialize
-      @finder_scangroups = [] of ScanGroup
+      @finder_quads = [] of Quad
     end
 
     private def data
@@ -18,28 +18,40 @@ module Goishi
     end
 
     def set_data(data : Canvas(UInt8))
-      center = Point.new(data.size_x / 2, data.size_y / 2)
-
       @data = data
-      @finder_scangroups = LineScanner.scan_finder_pat(data).to_a
-      @finder_scangroups.sort_by! do |q|
-        q_center = q.center
+      @finder_quads.clear
+
+      LineScanner.scan_finder_pat(data).each do |sg|
+        q = test_finder_scangroup(sg)
+        @finder_quads.push(q) if q
+      end
+
+      Visualizer.set_data(data)
+      @finder_quads.sort_by! do |q|
         score = 0
         # Prefer patterns with b:w:bbb:w:b
         score += 25 if q.color == 1
-        # Penalize patterns that are far from the center
-        distance = Point.distance(q_center, center) / ((data.size_x + data.size_y) / 2)
-        score -= distance * 100
-        # Prefer patterns that are detected with more scan lines
-        score += (q.x_scan_count + q.y_scan_count) ** 2
-        # Penalize patterns that the center does not match the color
-        score -= 100 if data[q_center]? != q.color
+        # Prefer bigger patterns
+        score += q.longest_side_length
 
-        score += (1.0 - (q.width / q.height)).abs * 25
+        # Prefer near-square patterns
+        q_width, q_height = q.w_vec.length, q.h_vec.length
+        score *= Math.min(q_width, q_height) / Math.max(q_width, q_height)
 
-        -score.round_even.to_i
+        # Visualizer.add_line(q.a, q.b, "#ff00ff")
+        # Visualizer.add_line(q.c, q.d, "#ff00ff")
+        # Visualizer.add_line(q.a, q.c, "#ff00ff")
+        # Visualizer.add_line(q.b, q.d, "#ff00ff")
+        # Visualizer.add_point(q.center, "#ff00ff")
+        # Visualizer.add_point(q.a, "#ff0000")
+        # Visualizer.add_point(q.b, "#0000ff")
+        # Visualizer.add_point(q.c, "#00ff00")
+        # Visualizer.add_point(q.d, "#ffff00")
+        # Visualizer.add_text(q.center, score.to_s)
+
+        -score
       end
-      # pp! @finder_scangroups.map(&.center)
+      Visualizer.export
     end
 
     # Recenter the point by performing runs in both direction
@@ -73,16 +85,11 @@ module Goishi
       Point.new(new_x, new_y)
     end
 
-    private def scangroup_to_quad(sg : ScanGroup)
-      scan1, scan2, center = find_finder_corners(sg) || return
-      Quad.new(scan1, scan2, center)
-    end
-
-    private def find_finder_corners(sg : ScanGroup)
+    private def test_finder_scangroup(sg : ScanGroup)
       center = refine_center(sg.center, sg.color)
 
       vec = Point.new(1, 0)
-      ray_groups = [[scan_finder_edges(center, vec, sg.color)]]
+      ray_groups = [[scan_finder_edges(center, vec, sg.color) || return]]
       179.times do |i|
         # Rotate the vector by 1°
         vec = Point.new(
@@ -92,7 +99,7 @@ module Goishi
 
         # Find the two edges of the finder pattern in the current vector's direction
         # and group them together by their length
-        pair, length = scan_finder_edges(center, vec, sg.color)
+        pair, length = scan_finder_edges(center, vec, sg.color) || return
         if length == ray_groups.last[0][1]
           ray_groups.last.push({pair, length})
         else
@@ -127,23 +134,10 @@ module Goishi
         pair2_cand, pair2_cand_score = item
         sin_sita = Point.angle_between(pair1[1] - pair1[0], pair2_cand[1] - pair2_cand[0]).abs
         score = (pair1_score + pair2_cand_score * 10) * Math.min(sin_sita, 0.9)
-
-        # Visualizer.set_data(data)
-        # Visualizer.add_text(center, score.to_s)
-        # Visualizer.add_line(pair1[0], pair1[1])
-        # Visualizer.add_line(pair2_cand[0], pair2_cand[1])
-        # Visualizer.add_point(pair1[0], "#00ffff")
-        # Visualizer.add_point(pair1[1], "#ffff00")
-        # Visualizer.add_text(pair1[0], pair1_score.to_s)
-        # Visualizer.add_point(pair2_cand[0], "#00ffff")
-        # Visualizer.add_point(pair2_cand[1], "#ffff00")
-        # Visualizer.add_text(pair2_cand[0], pair2_cand_score.to_s)
-        # Visualizer.export
-
         score
       end
 
-      {pair1, pair2, center}
+      Quad.new(pair1, pair2, center, sg.color)
     end
 
     private macro skip_same_color(operator, counter = nil)
@@ -162,34 +156,38 @@ module Goishi
 
     private def scan_finder_edges(origin : Point, vec : Point, color : UInt8)
       temp_point, prev_color = origin, color
-      len1 = 0
-      skip_same_color(:-, len1)
-      skip_same_color(:-, len1)
-      skip_same_color(:-, len1)
-      e1 = temp_point + vec # + vec * (len1 / 3.5) / 2
+      len1_1, len1_2, len1_3 = 0, 0, 0
+      skip_same_color(:-, len1_1)
+      skip_same_color(:-, len1_2)
+      skip_same_color(:-, len1_3)
+      len1 = len1_1 + len1_2 + len1_3
+      e1 = temp_point + vec
 
       temp_point, prev_color = origin, color
-      len2 = 0
-      skip_same_color(:+, len2)
-      skip_same_color(:+, len2)
-      skip_same_color(:+, len2)
-      e2 = temp_point - vec # - vec * (len2 / 3.5) / 2
+      len2_1, len2_2, len2_3 = 0, 0, 0
+      skip_same_color(:+, len2_1)
+      skip_same_color(:+, len2_2)
+      skip_same_color(:+, len2_3)
+      len2 = len2_1 + len2_2 + len2_3
+      e2 = temp_point - vec
+
+      len = len1 + len2 + 1
+      unit = len / 7
+      passed = {
+        {1, len1_3},
+        {1, len1_2},
+        {3, len1_1 + len2_1 + 1},
+        {1, len2_2},
+        {1, len2_3},
+      }.all? do |r, l|
+        range = (((r - 1) * unit).round_even..((r + 1) * unit).round_even)
+        range.includes?(l)
+      end
+      return unless passed
+
+      return if (len2 - len1).abs / Math.min(len1, len2) > 2
 
       { {e1, e2}, len1 + len2 + 1 }
-    end
-
-    # Get intersection point of EF and GH
-    private def intersection(e : Point, f : Point, g : Point, h : Point)
-      ef, gh = (f - e), (h - g)
-
-      deno = Point.cross_prod(ef, gh)
-      return if deno == 0
-
-      eg = g - e
-      s = Point.cross_prod(eg, gh) / deno
-      # t = Point.cross_prod(b - a, a - c) / deno
-
-      Point.new(e.x + s * ef.x, e.y + s * ef.y)
     end
   end
 end
