@@ -10,7 +10,8 @@ struct Goishi::LocatorSession
           extending_scangroup_idx = finder_scangroups.index do |q|
             next unless q.color == color
 
-            next unless q.bottom == y - 1 || q.bottom == y - 2
+            y_range = (q.bottom..q.bottom + 5)
+            next unless y_range.includes?(y)
 
             err = q.unit_x * 2
             l_range = (q.left - err..q.left + err)
