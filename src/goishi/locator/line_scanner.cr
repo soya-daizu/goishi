@@ -7,17 +7,17 @@ struct Goishi::LocatorSession
 
       data.each_row do |row, y|
         self.scan_finder_line(row) do |left, right, color|
-          extending_scangroup_idx = finder_scangroups.index do |q|
-            next unless q.color == color
+          extending_scangroup_idx = finder_scangroups.index do |sg|
+            next unless sg.color == color
 
-            y_range = (q.bottom..q.bottom + 5)
+            y_range = (sg.bottom..sg.bottom + 5)
             next unless y_range.includes?(y)
 
-            err = q.unit_x * 2
-            l_range = (q.left - err..q.left + err)
+            err = sg.unit_x * 2
+            l_range = (sg.left - err..sg.left + err)
             next unless l_range.includes?(left)
 
-            r_range = (q.right - err..q.right + err)
+            r_range = (sg.right - err..sg.right + err)
             next unless r_range.includes?(right)
 
             true
@@ -39,17 +39,17 @@ struct Goishi::LocatorSession
 
       data.each_column do |column, x|
         self.scan_finder_line(column) do |top, bottom, color|
-          extending_scangroup_idx = finder_scangroups.index do |q|
-            next unless q.color == color
+          extending_scangroup_idx = finder_scangroups.index do |sg|
+            next unless sg.color == color
 
-            lr_err = q.unit_x * 2
-            lr_range = (q.left + lr_err..q.right - lr_err)
+            lr_err = sg.unit_x * 2
+            lr_range = (sg.left + lr_err..sg.right - lr_err)
             next unless lr_range.includes?(x)
 
             unit_y = (bottom - top) / 7
             tb_err = unit_y * 2
             tb_range = (top + tb_err..bottom - tb_err)
-            next unless tb_range.includes?(q.center_y)
+            next unless tb_range.includes?(sg.center_y)
 
             true
           end
@@ -63,7 +63,7 @@ struct Goishi::LocatorSession
         end
       end
 
-      finder_scangroups.each.select { |q| q.x_scan_count > 1 && q.y_scan_count > 1 }
+      finder_scangroups.each.select { |sg| sg.x_scan_count > 1 && sg.y_scan_count > 1 }
     end
 
     private def scan_finder_line(line : Enumerable(UInt8), & : Int32, Int32, UInt8 ->)
@@ -99,14 +99,14 @@ struct Goishi::LocatorSession
 
       data.each_row_in_region(from, to) do |row, y|
         self.scan_alignment_line(row, color) do |left, right|
-          extending_scangroup_idx = alignment_scangroups.index do |q|
-            next unless q.bottom == y - 1
+          extending_scangroup_idx = alignment_scangroups.index do |sg|
+            next unless sg.bottom == y - 1
 
-            err = q.unit_x
-            l_range = (q.left - err..q.left + err)
+            err = sg.unit_x
+            l_range = (sg.left - err..sg.left + err)
             next unless l_range.includes?(left)
 
-            r_range = (q.right - err..q.right + err)
+            r_range = (sg.right - err..sg.right + err)
             next unless r_range.includes?(right)
 
             true
@@ -126,13 +126,13 @@ struct Goishi::LocatorSession
         end
       end
 
-      alignment_scangroups.select! do |q|
-        next unless q.x_scan_count > 1
+      alignment_scangroups.select! do |sg|
+        next unless sg.x_scan_count > 1
 
-        unit_x, unit_y = q.unit_x(3), q.height
+        unit_x, unit_y = sg.unit_x(3), sg.height
         unit = ((unit_x + unit_y) / 2).round_even
 
-        center_x, center_y = q.center_x, q.center_y
+        center_x, center_y = sg.center_x, sg.center_y
         m1_x, m2_x, m3_x = (center_x - unit_x), center_x, (center_x + unit_x)
 
         temp_y = center_y
