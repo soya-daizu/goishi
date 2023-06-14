@@ -95,7 +95,7 @@ module Goishi
           vec.x * Math.sin(Math::PI / 180) + vec.y * Math.cos(Math::PI / 180),
         ) if i < 179
       end
-      return if passed_count < 135
+      return if passed_count < 90
 
       scored_rays = [] of Tuple(Tuple(Point, Point), Float64)
       (0...ray_groups.size).each do |i|
