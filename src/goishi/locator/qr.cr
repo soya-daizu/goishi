@@ -3,11 +3,12 @@ struct Goishi::LocatorSession
     def locate_qr(max_candidates : Int, & : QRLocation ->)
       candidates_count = 0
 
+      best_quad_groups = [] of Tuple(Quad, Quad, Quad, Float64)
       (0...@finder_quads.size).each do |i|
         q1 = @finder_quads[i]
-        max_qr_width = q1.longest_side_length/7 * (17 + 4*40 - 7)
-        search_radius = max_qr_width * 1.2
-        search_radius *= search_radius
+        max_qr_width = q1.w_vec.length/7 * (17 + 4*40 - 7)
+        max_qr_height = q1.h_vec.length/7 * (17 + 4*40 - 7)
+        search_radius = Math.sqrt(max_qr_width ** 2 + max_qr_height ** 2) * 1.2
 
         nearby_quads = (i + 1...@finder_quads.size).map do |j|
           q = @finder_quads[j]
@@ -17,58 +18,57 @@ struct Goishi::LocatorSession
           {q, dist}
         end.reject!(Nil)
 
-        nearest_quad_pairs = nearby_quads.combinations(2).sort_by! do |pair|
-          pair[0][1] + pair[1][1]
+        nearest_quad_pairs = nearby_quads.each_combination(2, reuse: true) do |pair|
+          q2, dist2 = pair[0]
+          q3, dist3 = pair[1]
+          dist1 = (q2.center - q3.center).length
+          best_quad_groups.push({q1, q2, q3, dist1 + dist2 + dist3})
         end
+      end
 
-        nearest_quad_pairs.each do |pair|
-          return if candidates_count >= max_candidates
-          q2, q3 = pair[0][0], pair[1][0]
+      best_quad_groups.sort_by! do |_, _, _, penalty|
+        penalty
+      end
 
-          location = test_finder_qr(q1, q2, q3)
-          location = test_finder_qr(q2, q3, q1) unless location
-          location = test_finder_qr(q3, q1, q2) unless location
-          next unless location
+      best_quad_groups.each do |q1, q2, q3, _|
+        return if candidates_count >= max_candidates
 
-          candidates_count += 1
-          yield location
-        end
+        location = test_finder_qr(q1, q2, q3)
+        location = test_finder_qr(q2, q3, q1) unless location
+        location = test_finder_qr(q3, q1, q2) unless location
+        next unless location
+
+        candidates_count += 1
+        yield location
       end
     end
 
+    private def test_finder_facing_sides(a_quad : Quad, b_quad : Quad)
+      a_side_pts, a_side_intersection = a_quad.intersecting_side(b_quad) || return false
+      b_side_pts, b_side_intersection = b_quad.intersecting_side(a_quad) || return false
+
+      a_side = a_side_pts[0] - a_side_pts[1]
+      b_side = b_side_pts[0] - b_side_pts[1]
+      a_side_intersection_ratio = (a_side_pts[0] - a_side_intersection).length / a_side.length
+      b_side_intersection_ratio = (b_side_pts[0] - b_side_intersection).length / b_side.length
+      return false if (a_side_intersection_ratio - 0.5).abs > 0.35 || (b_side_intersection_ratio - 0.5).abs > 0.35
+      return false if (a_side.length - b_side.length).abs / Math.max(a_side.length, b_side.length) > 0.25
+      sin_sita = Point.angle_between(a_side, b_side).abs
+      return false if sin_sita > Math.sin(Math::PI / 4)
+
+      true
+    end
+
     private def test_finder_qr(q1 : Quad, q2 : Quad, q3 : Quad)
+      return unless test_finder_facing_sides(q1, q2)
+      return unless test_finder_facing_sides(q1, q3)
+
       a_quad, b_quad, c_quad = q1, q2, q3
       color = q1.color
 
-      a_b_side_pts, a_b_side_intersection = a_quad.intersecting_side(b_quad) || return
-      b_a_side_pts, b_a_side_intersection = b_quad.intersecting_side(a_quad) || return
-      a_b_side = a_b_side_pts[0] - a_b_side_pts[1]
-      b_a_side = b_a_side_pts[0] - b_a_side_pts[1]
-      a_b_side_intersection_ratio = (a_b_side_pts[0] - a_b_side_intersection).length / a_b_side.length
-      b_a_side_intersection_ratio = (b_a_side_pts[0] - b_a_side_intersection).length / b_a_side.length
-      return if (a_b_side_intersection_ratio - 0.5).abs > 0.35 || (b_a_side_intersection_ratio - 0.5).abs > 0.35
-      return if (a_b_side.length - b_a_side.length).abs / Math.max(a_b_side.length, b_a_side.length) > 0.25
-      sin_sita = Point.angle_between(a_b_side, b_a_side).abs
-      return if sin_sita > Math.sin(Math::PI / 4)
-
-      a_c_side_pts, a_c_side_intersection = a_quad.intersecting_side(c_quad) || return
-      c_a_side_pts, c_a_side_intersection = c_quad.intersecting_side(a_quad) || return
-      a_c_side = a_c_side_pts[0] - a_c_side_pts[1]
-      c_a_side = c_a_side_pts[0] - c_a_side_pts[1]
-      a_c_side_intersection_ratio = (a_c_side_pts[0] - a_c_side_intersection).length / a_c_side.length
-      c_a_side_intersection_ratio = (c_a_side_pts[0] - c_a_side_intersection).length / c_a_side.length
-      return if (a_c_side_intersection_ratio - 0.5).abs > 0.35 || (c_a_side_intersection_ratio - 0.5).abs > 0.35
-      return if (a_c_side.length - c_a_side.length).abs / Math.max(a_c_side.length, c_a_side.length) > 0.25
-      sin_sita = Point.angle_between(a_c_side, c_a_side).abs
-      return if sin_sita > Math.sin(Math::PI / 4)
-
-      # Define vectors
       ab_vec, ac_vec = (b_quad.center - a_quad.center), (c_quad.center - a_quad.center)
       ab_len, ac_len = ab_vec.length, ac_vec.length
-
       sin_sita = Point.angle_between(ab_vec, ac_vec)
-      # AB and AC must be near right angle
-      return if sin_sita.abs < 0.95
 
       # Swap B and C according to sin_sita
       if sin_sita > 0
@@ -109,27 +109,27 @@ struct Goishi::LocatorSession
         bottom_right_offset = 3.5
       end
 
-      # Visualizer.set_data(data)
-      # Visualizer.add_point(a_quad.center, "#ff00ff")
-      # Visualizer.add_point(a_quad.a, "#ff0000")
-      # Visualizer.add_point(a_quad.b, "#0000ff")
-      # Visualizer.add_point(a_quad.c, "#00ff00")
-      # Visualizer.add_point(a_quad.d, "#ffff00")
-      # Visualizer.add_text(a_quad.center, "A")
-      # Visualizer.add_point(b_quad.center, "#ff00ff")
-      # Visualizer.add_point(b_quad.a, "#ff0000")
-      # Visualizer.add_point(b_quad.b, "#0000ff")
-      # Visualizer.add_point(b_quad.c, "#00ff00")
-      # Visualizer.add_point(b_quad.d, "#ffff00")
-      # Visualizer.add_text(b_quad.center, "B")
-      # Visualizer.add_point(c_quad.center, "#ff00ff")
-      # Visualizer.add_point(c_quad.a, "#ff0000")
-      # Visualizer.add_point(c_quad.b, "#0000ff")
-      # Visualizer.add_point(c_quad.c, "#00ff00")
-      # Visualizer.add_point(c_quad.d, "#ffff00")
-      # Visualizer.add_text(c_quad.center, "C")
-      # Visualizer.add_point(d, "#ff00ff")
-      # Visualizer.export
+      Visualizer.set_data(data)
+      Visualizer.add_point(a_quad.center, "#ff00ff")
+      Visualizer.add_point(a_quad.a, "#ff0000")
+      Visualizer.add_point(a_quad.b, "#0000ff")
+      Visualizer.add_point(a_quad.c, "#00ff00")
+      Visualizer.add_point(a_quad.d, "#ffff00")
+      Visualizer.add_text(a_quad.center, "A")
+      Visualizer.add_point(b_quad.center, "#ff00ff")
+      Visualizer.add_point(b_quad.a, "#ff0000")
+      Visualizer.add_point(b_quad.b, "#0000ff")
+      Visualizer.add_point(b_quad.c, "#00ff00")
+      Visualizer.add_point(b_quad.d, "#ffff00")
+      Visualizer.add_text(b_quad.center, "B")
+      Visualizer.add_point(c_quad.center, "#ff00ff")
+      Visualizer.add_point(c_quad.a, "#ff0000")
+      Visualizer.add_point(c_quad.b, "#0000ff")
+      Visualizer.add_point(c_quad.c, "#00ff00")
+      Visualizer.add_point(c_quad.d, "#ffff00")
+      Visualizer.add_text(c_quad.center, "C")
+      Visualizer.add_point(d, "#ff00ff")
+      Visualizer.export
 
       QRLocation.new(QR,
         a_quad.center, b_quad.center, c_quad.center, d,
