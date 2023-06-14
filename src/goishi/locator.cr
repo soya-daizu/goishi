@@ -26,32 +26,19 @@ module Goishi
         @finder_quads.push(q) if q
       end
 
-      Visualizer.set_data(data)
-      @finder_quads.sort_by! do |q|
-        score = 0
-        # Prefer patterns with b:w:bbb:w:b
-        score += 25 if q.color == 1
-        # Prefer bigger patterns
-        score += q.longest_side_length
-
-        # Prefer near-square patterns
-        q_width, q_height = q.w_vec.length, q.h_vec.length
-        score *= Math.min(q_width, q_height) / Math.max(q_width, q_height)
-
-        # Visualizer.add_line(q.a, q.b, "#ff00ff")
-        # Visualizer.add_line(q.c, q.d, "#ff00ff")
-        # Visualizer.add_line(q.a, q.c, "#ff00ff")
-        # Visualizer.add_line(q.b, q.d, "#ff00ff")
-        # Visualizer.add_point(q.center, "#ff00ff")
-        # Visualizer.add_point(q.a, "#ff0000")
-        # Visualizer.add_point(q.b, "#0000ff")
-        # Visualizer.add_point(q.c, "#00ff00")
-        # Visualizer.add_point(q.d, "#ffff00")
-        # Visualizer.add_text(q.center, score.to_s)
-
-        -score
-      end
-      Visualizer.export
+      # Visualizer.set_data(data)
+      # @finder_quads.each do |q|
+      #  Visualizer.add_line(q.a, q.b, "#ff00ff")
+      #  Visualizer.add_line(q.c, q.d, "#ff00ff")
+      #  Visualizer.add_line(q.a, q.c, "#ff00ff")
+      #  Visualizer.add_line(q.b, q.d, "#ff00ff")
+      #  Visualizer.add_point(q.center, "#ff00ff")
+      #  Visualizer.add_point(q.a, "#ff0000")
+      #  Visualizer.add_point(q.b, "#0000ff")
+      #  Visualizer.add_point(q.c, "#00ff00")
+      #  Visualizer.add_point(q.d, "#ffff00")
+      # end
+      # Visualizer.export
     end
 
     # Recenter the point by performing runs in both direction
