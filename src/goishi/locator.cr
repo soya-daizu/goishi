@@ -104,13 +104,13 @@ module Goishi
 
         pair, _ = ray_groups[i][ray_groups[i].size // 2]
         score = (pair[1] - pair[0]).length
-        score += (ray_lengths[2] - ray_lengths[1])
-        score += (ray_lengths[2] - ray_lengths[3])
-        score *= 1.1 if ray_lengths[1] == ray_lengths[3]
+        # score += (ray_lengths[2] - ray_lengths[1])
+        # score += (ray_lengths[2] - ray_lengths[3])
+        # score *= 1.1 if ray_lengths[1] == ray_lengths[3]
 
         if ray_lengths[0] < ray_lengths[1] && ray_lengths[3] > ray_lengths[4]
-          score += (ray_lengths[1] - ray_lengths[0])
-          score += (ray_lengths[3] - ray_lengths[4])
+          # score += (ray_lengths[1] - ray_lengths[0])
+          # score += (ray_lengths[3] - ray_lengths[4])
           score *= 1.1 if ray_lengths[0] == ray_lengths[4]
           score *= 1.1 if ray_lengths[1] == ray_lengths[3]
         end
