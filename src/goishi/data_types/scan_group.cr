@@ -73,42 +73,6 @@ module Goishi
     def center
       Point.new(center_x, center_y)
     end
-
-    def left_angle(clue)
-      a = @left_scans.angle_of_left(clue)
-      Point.new(a, 1)
-    end
-
-    def right_angle(clue)
-      a = @right_scans.angle_of_right(clue)
-      Point.new(a, 1)
-    end
-
-    # Vector of the scangroup's tilt to y direction based on its left and right endpoints
-    def y_angle(clue : Point)
-      a1 = @left_scans.angle_of_left(clue)
-      a2 = @right_scans.angle_of_right(clue)
-
-      Point.new((a1 + a2) / 2, 1)
-    end
-
-    def top_angle(clue)
-      a = @top_scans.angle_of_top(clue)
-      Point.new(1, a)
-    end
-
-    def bottom_angle(clue)
-      a = @bottom_scans.angle_of_bottom(clue)
-      Point.new(1, a)
-    end
-
-    # Vector of the scangroup's tilt to x direction based on its top and bottom endpoints
-    def x_angle(clue : Point)
-      a1 = @top_scans.angle_of_top(clue)
-      a2 = @bottom_scans.angle_of_bottom(clue)
-
-      Point.new(1, (a1 + a2) / 2)
-    end
   end
 
   struct XScanGroup
@@ -148,39 +112,6 @@ module Goishi
     def extend_by_right(x_line : XScan)
       extend_by(:right)
     end
-
-    macro angle_of(prop)
-      scans = [@first, @min, @max, @last].uniq!.sort_by!(&.y)
-      scans_with_index = scans.map_with_index { |v, i| {v, i} }
-      scans_with_index.reject! do |a, i|
-        scans_with_index.any? { |b, j| a != b && i == j - 1 && b.{{prop.id}} == a.{{prop.id}} }
-      end
-      scans = scans_with_index.map(&.[0])
-
-      case scans.size
-      when 1
-        0.0
-      when 2
-        (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].y - scans[0].y)
-      when 3
-        # The scans are canceling out each other, so we use the clue vector to figure out which one to use
-        v1 = (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].y - scans[0].y)
-        v2 = (scans[2].{{prop.id}} - scans[1].{{prop.id}}) / (scans[2].y - scans[1].y)
-
-        clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
-        clue_rising ? Math.max(v1, v2) : Math.min(v1, v2)
-      else
-        raise "Unable to determine the angle of {{prop.id}} endpoints"
-      end
-    end
-
-    def angle_of_left(clue : Point)
-      angle_of(:left)
-    end
-
-    def angle_of_right(clue : Point)
-      angle_of(:right)
-    end
   end
 
   struct YScanGroup
@@ -219,39 +150,6 @@ module Goishi
 
     def extend_by_bottom(y_line : YScan)
       extend_by(:bottom)
-    end
-
-    macro angle_of(prop)
-      scans = [@first, @min, @max, @last].uniq!.sort_by!(&.x)
-      scans_with_index = scans.map_with_index { |v, i| {v, i} }
-      scans_with_index.reject! do |a, i|
-        scans_with_index.any? { |b, j| a != b && i == j - 1 && b.{{prop.id}} == a.{{prop.id}} }
-      end
-      scans = scans_with_index.map(&.[0])
-
-      case scans.size
-      when 1
-        0.0
-      when 2
-        (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].x - scans[0].x)
-      when 3
-        # The scans are canceling out each other, so we use the clue vector to figure out which one to use
-        v1 = (scans[1].{{prop.id}} - scans[0].{{prop.id}}) / (scans[1].x - scans[0].x)
-        v2 = (scans[2].{{prop.id}} - scans[1].{{prop.id}}) / (scans[2].x - scans[1].x)
-
-        clue_rising = (clue.x > 0 && clue.y > 0) || (clue.x < 0 && clue.y < 0)
-        clue_rising ? Math.max(v1, v2) : Math.min(v1, v2)
-      else
-        raise "Unable to determine the angle of {{prop.id}} endpoints"
-      end
-    end
-
-    def angle_of_top(clue : Point)
-      angle_of(:top)
-    end
-
-    def angle_of_bottom(clue : Point)
-      angle_of(:bottom)
     end
   end
 
