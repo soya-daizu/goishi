@@ -10,15 +10,16 @@ struct Goishi::LocatorSession
         max_qr_height = q1.h_vec.length/7 * (17 + 4*40 - 7)
         search_radius = Math.sqrt(max_qr_width ** 2 + max_qr_height ** 2) * 1.2
 
-        nearby_quads = (i + 1...@finder_quads.size).map do |j|
+        nearby_quads = [] of Tuple(Quad, Float64)
+        (i + 1...@finder_quads.size).each do |j|
           q = @finder_quads[j]
-          return unless q.color == q1.color
+          next unless q.color == q1.color
           dist = (q.center - q1.center).length
-          return unless dist <= search_radius
-          {q, dist}
-        end.reject!(Nil)
+          next unless dist <= search_radius
+          nearby_quads.push({q, dist})
+        end
 
-        nearest_quad_pairs = nearby_quads.each_combination(2, reuse: true) do |pair|
+        nearby_quads.each_combination(2, reuse: true) do |pair|
           q2, dist2 = pair[0]
           q3, dist3 = pair[1]
           dist1 = (q2.center - q3.center).length
