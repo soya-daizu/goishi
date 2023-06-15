@@ -64,7 +64,7 @@ module Goishi
       eg, ge = (g - e), (e - g)
       s = Point.cross_prod(eg, gh) / deno
       t = Point.cross_prod(ef, ge) / deno
-      return if segment && !((0..1).includes?(s) && (0..1).includes?(t))
+      return if segment && !(s.in?(0..1) && t.in?(0..1))
 
       Point.new(e.x + s * ef.x, e.y + s * ef.y)
     end

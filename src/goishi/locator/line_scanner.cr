@@ -11,14 +11,14 @@ struct Goishi::LocatorSession
             next unless sg.color == color
 
             y_range = (sg.bottom..sg.bottom + 5)
-            next unless y_range.includes?(y)
+            next unless y.in?(y_range)
 
             err = sg.unit_x * 2
             l_range = (sg.left - err..sg.left + err)
-            next unless l_range.includes?(left)
+            next unless left.in?(l_range)
 
             r_range = (sg.right - err..sg.right + err)
-            next unless r_range.includes?(right)
+            next unless right.in?(r_range)
 
             true
           end
@@ -44,12 +44,12 @@ struct Goishi::LocatorSession
 
             lr_err = sg.unit_x * 2
             lr_range = (sg.left + lr_err..sg.right - lr_err)
-            next unless lr_range.includes?(x)
+            next unless x.in?(lr_range)
 
             unit_y = (bottom - top) / 7
             tb_err = unit_y * 2
             tb_range = (top + tb_err..bottom - tb_err)
-            next unless tb_range.includes?(sg.center_y)
+            next unless sg.center_y.in?(tb_range)
 
             true
           end
@@ -83,7 +83,7 @@ struct Goishi::LocatorSession
             ratio = {1, 1, 3, 1, 1}.map do |r|
               ((r - 0.5) * unit).round_even..((r + 0.5) * unit).round_even
             end
-            passed = buffer.each.with_index.all? { |length, j| ratio[j].includes?(length) }
+            passed = buffer.each.with_index.all? { |length, j| length.in?(ratio[j]) }
 
             yield (i - buffer.sum), (i - 1), prev_value if passed
           end
@@ -104,10 +104,10 @@ struct Goishi::LocatorSession
 
             err = sg.unit_x
             l_range = (sg.left - err..sg.left + err)
-            next unless l_range.includes?(left)
+            next unless left.in?(l_range)
 
             r_range = (sg.right - err..sg.right + err)
-            next unless r_range.includes?(right)
+            next unless right.in?(r_range)
 
             true
           end
@@ -147,7 +147,7 @@ struct Goishi::LocatorSession
         m1_bottom = temp_y
         m1_unit_y = (m1_bottom - m1_top) / 3
         # The left and right tend to be shorter when the pattern is rhombus
-        next unless (0.4..1.25).includes?(m1_unit_y / unit)
+        next unless (m1_unit_y / unit).in?(0.4..1.25)
 
         temp_y = center_y
         color_changes, prev_color = 0, color
@@ -171,7 +171,7 @@ struct Goishi::LocatorSession
         m2_bottom = temp_y - 1
         m2_unit_y = (m2_bottom - m2_top) / 3
         # The middle tend to be longer when the pattern is rhombus
-        next unless (0.75..1.6).includes?(m2_unit_y / unit)
+        next unless (m2_unit_y / unit).in?(0.75..1.6)
 
         temp_y = center_y
         until (data[m3_x, temp_y - 1]? || color) == color
@@ -185,7 +185,7 @@ struct Goishi::LocatorSession
         m3_bottom = temp_y
         m3_unit_y = (m3_bottom - m3_top) / 3
         # The left and right tend to be be shorter when the pattern is rhombus
-        next unless (0.4..1.25).includes?(m3_unit_y / unit)
+        next unless (m3_unit_y / unit).in?(0.4..1.25)
         next unless ((m1_unit_y - m3_unit_y).abs / unit) <= 0.4
 
         true
@@ -212,7 +212,7 @@ struct Goishi::LocatorSession
           if j >= 3 && value == color
             unit = buffer.sum / 3
             range = (0.6 * unit).round_even..(1.4 * unit).round_even
-            passed = buffer.all? { |length| range.includes?(length) }
+            passed = buffer.all? { |length| length.in?(range) }
 
             yield (i - buffer.sum), (i - 1) if passed
           end

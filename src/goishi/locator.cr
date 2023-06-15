@@ -173,7 +173,7 @@ module Goishi
         {1, len2_3},
       }.all? do |r, l|
         range = (((r - 0.5) * unit).round_even..((r + 0.5) * unit).round_even)
-        range.includes?(l)
+        l.in?(range)
       end
 
       { {e1, e2}, len1 + len2 + 1, passed }
