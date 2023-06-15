@@ -109,27 +109,12 @@ struct Goishi::LocatorSession
         bottom_right_offset = 3.5
       end
 
-      Visualizer.set_data(data)
-      Visualizer.add_point(a_quad.center, "#ff00ff")
-      Visualizer.add_point(a_quad.a, "#ff0000")
-      Visualizer.add_point(a_quad.b, "#0000ff")
-      Visualizer.add_point(a_quad.c, "#00ff00")
-      Visualizer.add_point(a_quad.d, "#ffff00")
-      Visualizer.add_text(a_quad.center, "A")
-      Visualizer.add_point(b_quad.center, "#ff00ff")
-      Visualizer.add_point(b_quad.a, "#ff0000")
-      Visualizer.add_point(b_quad.b, "#0000ff")
-      Visualizer.add_point(b_quad.c, "#00ff00")
-      Visualizer.add_point(b_quad.d, "#ffff00")
-      Visualizer.add_text(b_quad.center, "B")
-      Visualizer.add_point(c_quad.center, "#ff00ff")
-      Visualizer.add_point(c_quad.a, "#ff0000")
-      Visualizer.add_point(c_quad.b, "#0000ff")
-      Visualizer.add_point(c_quad.c, "#00ff00")
-      Visualizer.add_point(c_quad.d, "#ffff00")
-      Visualizer.add_text(c_quad.center, "C")
-      Visualizer.add_point(d, "#ff00ff")
-      Visualizer.export
+      # Visualizer.set_data(data)
+      # a_quad.add_to_visualizer("A")
+      # b_quad.add_to_visualizer("B")
+      # c_quad.add_to_visualizer("C")
+      # Visualizer.add_point(d, "#ff00ff")
+      # Visualizer.export
 
       QRLocation.new(QR,
         a_quad.center, b_quad.center, c_quad.center, d,

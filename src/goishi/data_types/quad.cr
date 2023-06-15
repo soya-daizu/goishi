@@ -49,5 +49,18 @@ module Goishi
 
       w_sin_sita <= h_sin_sita ? w_vec : h_vec
     end
+
+    protected def add_to_visualizer(text : String)
+      Visualizer.add_point(@center, "#ff00ff")
+      Visualizer.add_point(@a, "#ff0000")
+      Visualizer.add_point(@b, "#0000ff")
+      Visualizer.add_point(@c, "#00ff00")
+      Visualizer.add_point(@d, "#ffff00")
+      Visualizer.add_line(@a, @b, "#ff00ff")
+      Visualizer.add_line(@c, @d, "#ff00ff")
+      Visualizer.add_line(@a, @c, "#ff00ff")
+      Visualizer.add_line(@b, @d, "#ff00ff")
+      Visualizer.add_text(@center, text)
+    end
   end
 end
