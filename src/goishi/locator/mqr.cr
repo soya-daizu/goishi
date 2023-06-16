@@ -55,14 +55,14 @@ struct Goishi::LocatorSession
       d = (d_ab + d_ac) / 2
       return unless d.x.in?(0...data.size_x) && d.y.in?(0...data.size_y)
 
-      Visualizer.set_data(data)
-      Visualizer.add_point(a, "#ff0000")
-      Visualizer.add_point(b, "#0000ff")
-      Visualizer.add_point(c, "#00ff00")
-      Visualizer.add_point(d, "#ffff00")
-      Visualizer.add_point(d_ab.not_nil!, "#ff00ff")
-      Visualizer.add_point(d_ac.not_nil!, "#ff00ff")
-      Visualizer.export
+      # Visualizer.set_data(data)
+      # Visualizer.add_point(a, "#ff0000")
+      # Visualizer.add_point(b, "#0000ff")
+      # Visualizer.add_point(c, "#00ff00")
+      # Visualizer.add_point(d, "#ffff00")
+      # Visualizer.add_point(d_ab.not_nil!, "#ff00ff")
+      # Visualizer.add_point(d_ac.not_nil!, "#ff00ff")
+      # Visualizer.export
 
       QRLocation.new(MQR,
         a, b, c, d,
