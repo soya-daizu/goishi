@@ -103,13 +103,18 @@ struct Goishi::LocatorSession
       version = version.clamp(1, 40)
 
       # This will be the point D
-      intersection = Point.intersection(b_quad.center, b_quad.center + bd_vec, c_quad.center, c_quad.center + cd_vec)
-      return unless intersection
+      intersection = Point.intersection(
+        b_quad.center, b_quad.center + bd_vec,
+        c_quad.center, c_quad.center + cd_vec
+      ) || return
       return unless intersection.x.in?(0...data.size_x) &&
                     intersection.y.in?(0...data.size_y)
 
       # Try finding an alignment pattern around D
-      alignment_point = refine_bottom_right(intersection, a_quad.center, unit, color) if version >= 2
+      alignment_point = refine_bottom_right(
+        intersection, a_quad.center,
+        unit, color
+      ) if version >= 2
       if alignment_point
         d = alignment_point
         bottom_right_offset = 6.5
