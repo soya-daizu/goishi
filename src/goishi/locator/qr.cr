@@ -31,6 +31,14 @@ struct Goishi::LocatorSession
         penalty
       end
 
+      # Visualizer.set_data(data)
+      # best_quad_groups.each do |q1, q2, q3, penalty|
+      #  Visualizer.add_line(q1.center, q2.center, "#ff00ff")
+      #  Visualizer.add_line(q2.center, q3.center, "#ff00ff")
+      #  Visualizer.add_line(q3.center, q1.center, "#ff00ff")
+      # end
+      # Visualizer.export
+
       best_quad_groups.each do |q1, q2, q3, _|
         return if candidates_count >= max_candidates
 
@@ -129,25 +137,17 @@ struct Goishi::LocatorSession
       from = est_alignment - 5 * unit
       to = est_alignment + 5 * unit
 
-      alignment_scangroups = LineScanner.scan_alignment_pat(data, from, to, color).max_by? do |q|
-        q_center = q.center
-        score = 100
-        # Penalize patterns that are far from the estimated point
-        distance = (est_alignment - q_center).length / unit
-        score -= distance * 5
-        # Penalize patterns that are not close in unit size
-        q_unit = ((q.unit_x(3) + q.height) / 2).round_even
-        diff = (q_unit - unit).abs / unit
-        score -= diff * 50
-        # Penalize patterns that the center does not match the color
-        score -= 100 if data[q_center.x.to_i, q_center.y.to_i] != q.color
-
-        # pp({q, score, distance, q_unit, unit})
-
-        score
+      alignment_quads = [] of Quad
+      LineScanner.scan_alignment_pat(data, from, to, color).each do |sg|
+        q = RayScanner.test_alignment_scangroup(data, sg)
+        alignment_quads.push(q) if q
       end
 
-      alignment_scangroups.try(&.center)
+      alignment_quads.sort_by! do |q|
+        (est_alignment - q.center).length
+      end
+
+      alignment_quads[0]?.try(&.center)
     end
   end
 end

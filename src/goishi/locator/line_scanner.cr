@@ -13,11 +13,11 @@ struct Goishi::LocatorSession
             y_range = (sg.bottom..sg.bottom + 5)
             next unless y.in?(y_range)
 
-            err = sg.unit_x * 2
-            l_range = (sg.left - err..sg.left + err)
+            unit_x = sg.unit_x
+            l_range = (sg.left - unit_x..sg.left + unit_x)
             next unless left.in?(l_range)
 
-            r_range = (sg.right - err..sg.right + err)
+            r_range = (sg.right - unit_x..sg.right + unit_x)
             next unless right.in?(r_range)
 
             true
@@ -42,14 +42,23 @@ struct Goishi::LocatorSession
           extending_scangroup_idx = finder_scangroups.index do |sg|
             next unless sg.color == color
 
-            lr_err = sg.unit_x * 2
+            lr_err = sg.unit_x
             lr_range = (sg.left + lr_err..sg.right - lr_err)
             next unless x.in?(lr_range)
 
-            unit_y = (bottom - top) / 7
-            tb_err = unit_y * 2
-            tb_range = (top + tb_err..bottom - tb_err)
-            next unless sg.center_y.in?(tb_range)
+            if sg.y_scan_count == 0
+              center_y = (top + bottom) / 2
+              unit_y = (bottom - top) / 7
+              center_range = (center_y - unit_y..center_y + unit_y)
+              next unless sg.center_y.in?(center_range)
+            else
+              unit_y = sg.unit_y
+              t_range = (sg.top - unit_y..sg.top + unit_y)
+              next unless top.in?(t_range)
+
+              b_range = (sg.bottom - unit_y..sg.bottom + unit_y)
+              next unless bottom.in?(b_range)
+            end
 
             true
           end
@@ -62,6 +71,20 @@ struct Goishi::LocatorSession
           finder_scangroups[extending_scangroup_idx] = extending_scangroup
         end
       end
+
+      # Visualizer.set_data(data)
+      # finder_scangroups.each do |sg|
+      #  color = "##{Random::DEFAULT.hex(3)}"
+      #  Visualizer.add_point(Point.new(sg.left, sg.top), color)
+      #  Visualizer.add_point(Point.new(sg.right, sg.top), color)
+      #  Visualizer.add_point(Point.new(sg.left, sg.bottom), color)
+      #  Visualizer.add_point(Point.new(sg.right, sg.bottom), color)
+      #  Visualizer.add_line(Point.new(sg.left, sg.top), Point.new(sg.right, sg.top), color)
+      #  Visualizer.add_line(Point.new(sg.left, sg.bottom), Point.new(sg.right, sg.bottom), color)
+      #  Visualizer.add_line(Point.new(sg.left, sg.top), Point.new(sg.left, sg.bottom), color)
+      #  Visualizer.add_line(Point.new(sg.right, sg.top), Point.new(sg.right, sg.bottom), color)
+      # end
+      # Visualizer.export
 
       finder_scangroups.each.select { |sg| sg.x_scan_count > 1 && sg.y_scan_count > 1 }
     end
@@ -100,9 +123,10 @@ struct Goishi::LocatorSession
       data.each_row_in_region(from, to) do |row, y|
         self.scan_alignment_line(row, color) do |left, right|
           extending_scangroup_idx = alignment_scangroups.index do |sg|
-            next unless sg.bottom == y - 1
+            y_range = (sg.bottom..sg.bottom + 2)
+            next unless y.in?(y_range)
 
-            err = sg.unit_x
+            err = sg.unit_x(3)
             l_range = (sg.left - err..sg.left + err)
             next unless left.in?(l_range)
 
@@ -127,69 +151,22 @@ struct Goishi::LocatorSession
       end
 
       alignment_scangroups.select! do |sg|
-        next unless sg.x_scan_count > 1
-
-        unit_x, unit_y = sg.unit_x(3), sg.height
-        unit = ((unit_x + unit_y) / 2).round_even
-
-        center_x, center_y = sg.center_x, sg.center_y
-        m1_x, m2_x, m3_x = (center_x - unit_x), center_x, (center_x + unit_x)
-
-        temp_y = center_y
-        until (data[m1_x, temp_y - 1]? || color) == color
-          temp_y -= 1
-        end
-        m1_top = temp_y
-        temp_y = center_y
-        until (data[m1_x, temp_y + 1]? || color) == color
-          temp_y += 1
-        end
-        m1_bottom = temp_y
-        m1_unit_y = (m1_bottom - m1_top) / 3
-        # The left and right tend to be shorter when the pattern is rhombus
-        next unless (m1_unit_y / unit).in?(0.4..1.25)
-
-        temp_y = center_y
-        color_changes, prev_color = 0, color
-        until color_changes == 2
-          c = data[m2_x, temp_y -= 1]?
-          next if c == prev_color
-
-          color_changes += 1
-          prev_color = c
-        end
-        m2_top = temp_y + 1
-        temp_y = center_y
-        color_changes, prev_color = 0, color
-        until color_changes == 2
-          c = data[m2_x, temp_y += 1]?
-          next if c == prev_color
-
-          color_changes += 1
-          prev_color = c
-        end
-        m2_bottom = temp_y - 1
-        m2_unit_y = (m2_bottom - m2_top) / 3
-        # The middle tend to be longer when the pattern is rhombus
-        next unless (m2_unit_y / unit).in?(0.75..1.6)
-
-        temp_y = center_y
-        until (data[m3_x, temp_y - 1]? || color) == color
-          temp_y -= 1
-        end
-        m3_top = temp_y
-        temp_y = center_y
-        until (data[m3_x, temp_y + 1]? || color) == color
-          temp_y += 1
-        end
-        m3_bottom = temp_y
-        m3_unit_y = (m3_bottom - m3_top) / 3
-        # The left and right tend to be be shorter when the pattern is rhombus
-        next unless (m3_unit_y / unit).in?(0.4..1.25)
-        next unless ((m1_unit_y - m3_unit_y).abs / unit) <= 0.4
-
-        true
+        sg.x_scan_count > 1
       end
+
+      # Visualizer.set_data(data)
+      # alignment_scangroups.each do |sg|
+      #   color = "##{Random::DEFAULT.hex(3)}"
+      #   Visualizer.add_point(Point.new(sg.left, sg.top), color)
+      #   Visualizer.add_point(Point.new(sg.right, sg.top), color)
+      #   Visualizer.add_point(Point.new(sg.left, sg.bottom), color)
+      #   Visualizer.add_point(Point.new(sg.right, sg.bottom), color)
+      #   Visualizer.add_line(Point.new(sg.left, sg.top), Point.new(sg.right, sg.top), color)
+      #   Visualizer.add_line(Point.new(sg.left, sg.bottom), Point.new(sg.right, sg.bottom), color)
+      #   Visualizer.add_line(Point.new(sg.left, sg.top), Point.new(sg.left, sg.bottom), color)
+      #   Visualizer.add_line(Point.new(sg.right, sg.top), Point.new(sg.right, sg.bottom), color)
+      # end
+      # Visualizer.export
 
       alignment_scangroups.each
     end
