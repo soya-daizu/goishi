@@ -29,31 +29,29 @@ def decode_qr(input_name : String)
   puts input_name
   canvas = read_file(input_name)
 
-  i = 0
   locator = Goishi::LocatorSession.new
   locator.set_data(canvas)
-  locator.locate_qr(5) do |location|
-    p! location
+  locator.locate_qr(100) do |location, i|
+    # p! location
     extractor = Goishi::Extractor.new(canvas)
     extracted_canvas = extractor.extract(location)
     extracted_canvas.invert if location.color == 0
     write_file("extracted#{i}.png", extracted_canvas)
-    i += 1
 
-    segments = begin
-      Goishi::QR::Decoder.decode(extracted_canvas).segments
+    string = begin
+      Goishi::QR::Decoder.decode_to_string(extracted_canvas)
     rescue e : Goishi::QR::Decoder::VersionMismatchError
       puts e
       location.version = e.actual_version
       extracted_canvas = extractor.extract(location)
-      Goishi::QR::Decoder.decode(extracted_canvas).segments rescue next
+      Goishi::QR::Decoder.decode_to_string(extracted_canvas) rescue next
     rescue e
       puts e
       extracted_canvas = extractor.extract(location)
       extracted_canvas.flip_tr_bl
-      Goishi::QR::Decoder.decode(extracted_canvas).segments rescue next
+      Goishi::QR::Decoder.decode_to_string(extracted_canvas) rescue next
     end
-    p! segments.join(&.text)
+    p! string
 
     break
   end
@@ -65,25 +63,25 @@ def decode_mqr(input_name : String)
 
   locator = Goishi::LocatorSession.new
   locator.set_data(canvas)
-  locator.locate_mqr(6) do |location|
-    pp! location
+  locator.locate_mqr(100) do |location, i|
+    # p! location
     extractor = Goishi::Extractor.new(canvas)
     extracted_canvas = extractor.extract(location)
     extracted_canvas.invert if location.color == 0
-    write_file("debug.png", extracted_canvas)
+    write_file("extracted#{i}.png", extracted_canvas)
 
-    segments = begin
-      Goishi::MQR::Decoder.decode(extracted_canvas).segments
+    string = begin
+      Goishi::MQR::Decoder.decode_to_string(extracted_canvas)
     rescue e : Goishi::MQR::Decoder::VersionMismatchError
       location.version = e.actual_version
       extracted_canvas = extractor.extract(location)
-      Goishi::MQR::Decoder.decode(extracted_canvas).segments rescue next
+      Goishi::MQR::Decoder.decode_to_string(extracted_canvas) rescue next
     rescue e
       extracted_canvas = extractor.extract(location)
       extracted_canvas.flip_tr_bl
-      Goishi::MQR::Decoder.decode(extracted_canvas).segments rescue next
+      Goishi::MQR::Decoder.decode_to_string(extracted_canvas) rescue next
     end
-    p! segments.join(&.text)
+    p! string
 
     break
   end
