@@ -4,123 +4,80 @@ struct Goishi::LocatorSession
       candidates_count = 0
 
       @finder_quads.each do |q|
-        location = test_finder_mqr(q)
+        return if candidates_count >= max_candidates
+
+        top_angle, top_edges = q.ab.unit_vec, {q.inner_a, q.inner_b}
+        left_angle, left_edges = q.ac.unit_vec, {q.inner_a, q.inner_c}
+        bottom_angle, bottom_edges = q.cd.unit_vec, {q.inner_c, q.inner_d}
+        right_angle, right_edges = q.bd.unit_vec, {q.inner_b, q.inner_d}
+
+        location = nil
+        {% for set in {
+                        {:top, :left, :a},
+                        {:left, :bottom, :c},
+                        {:bottom, :right, :d},
+                        {:right, :top, :b},
+                      } %}
+          {% s1, s2, top_left = set %}
+
+          location = test_finder_mqr(
+            q, q.inner_{{top_left.id}},
+            {{s1.id}}_edges, {{s2.id}}_edges,
+            {{s1.id}}_angle, {{s2.id}}_angle,
+          ) unless location
+
+        {% end %}
         next unless location
 
+        yield location, candidates_count
         candidates_count += 1
-        yield location
       end
     end
 
-    private def test_finder_mqr(q : Quad)
-      center = refine_center(q.center, q.color)
+    private def test_finder_mqr(q : Quad, top_left : Point,
+                                side1 : Tuple(Point, Point), side2 : Tuple(Point, Point),
+                                side1_vec : Point, side2_vec : Point)
+      result = test_timing_patterns_mqr(
+        side1, side2, side1_vec, side2_vec, q.color
+      )
+      return unless result
 
-      ab_angle = q.x_angle(Point.new(0, 0)) rescue return
-      ac_angle = q.y_angle(Point.new(0, 0)) rescue return
-      ab_vec = ab_angle.unit_vec
-      ac_vec = ac_angle.unit_vec
+      a = top_left
+      b, c, timing_mods = result
+      version = timing_mods // 2 - 1
+      mods = timing_mods + 7
 
-      ab_unit = refine_unit(center, ab_vec, q.color)
-      ac_unit = refine_unit(center, ac_vec, q.color)
-      unit = ((ab_unit + ac_unit) / 2).round_even.to_i
-      top = center - ac_vec * ac_unit * 3
-      bottom = center + ac_vec * ac_unit * 3
-      left = center - ab_vec * ab_unit * 3
-      right = center + ab_vec * ab_unit * 3
-      pp!({top, bottom, left, right})
+      bd_vec = b + (c - a)
+      cd_vec = c + (b - a)
+      d_ab = Point.intersection(a, q.center, b, bd_vec) || return
+      d_ac = Point.intersection(a, q.center, c, cd_vec) || return
 
-      location = test_timing_patterns(top, left, ab_vec, ac_vec, q.color, unit)
-      location = test_timing_patterns(left, bottom, ac_vec, ab_vec, q.color, unit) unless location
-      location = test_timing_patterns(bottom, right, ab_vec, ac_vec, q.color, unit) unless location
-      location = test_timing_patterns(right, top, ac_vec, ab_vec, q.color, unit) unless location
+      d = (d_ab + d_ac) / 2
+      return unless d.x.in?(0...data.size_x) && d.y.in?(0...data.size_y)
 
-      location
-    end
+      Visualizer.set_data(data)
+      Visualizer.add_point(a, "#ff0000")
+      Visualizer.add_point(b, "#0000ff")
+      Visualizer.add_point(c, "#00ff00")
+      Visualizer.add_point(d, "#ffff00")
+      Visualizer.add_point(d_ab.not_nil!, "#ff00ff")
+      Visualizer.add_point(d_ac.not_nil!, "#ff00ff")
+      Visualizer.export
 
-    private def test_timing_patterns(p1 : Point, p2 : Point, p1_vec : Point, p2_vec : Point, color : UInt8, unit : Int)
-      b, ab_mods = run_timing_pattern(p1, p1_vec, color)
-      c, ac_mods = run_timing_pattern(p2, p2_vec, color)
-      return unless ab_mods == ac_mods
-
-      a = intersection(p1, b, p2, c)
-      return unless a
-      return unless (0...data.size_x).includes?(a.x) &&
-                    (0...data.size_y).includes?(a.y)
-
-      d = intersection(b, b + p2_vec, c, c + p1_vec)
-      return unless d
-      return unless (0...data.size_x).includes?(d.x) &&
-                    (0...data.size_y).includes?(d.y)
-
-      version = ab_mods // 2 - 1
-
-      QRLocation.new(
+      QRLocation.new(MQR,
         a, b, c, d,
-        unit, version, color,
+        version, q.color,
         {0.5, 0.5, 0.5, 0.5}
       )
     end
 
-    private def run_timing_pattern(origin : Point, vec : Point, color : UInt8)
-      temp_point, prev_color = origin, color
-      len = 0
-      while prev_color == color
-        prev_color = data[temp_point -= vec]
-        len += 1
-      end
+    private def test_timing_patterns_mqr(side1 : Tuple(Point, Point), side2 : Tuple(Point, Point),
+                                         side1_vec : Point, side2_vec : Point, color : UInt8)
+      b, ab_timing_mods = RayScanner.scan_timing_pattern(data, *side1, side1_vec, color) || return
+      c, ac_timing_mods = RayScanner.scan_timing_pattern(data, *side2, side2_vec, color) || return
+      return unless ab_timing_mods == ac_timing_mods
 
-      last_black_point, mod_count = temp_point, 0
-      len, prev_len = 1, (len / 3.5).round_even.to_i
-      while true
-        c = data[temp_point -= vec] || break
-        last_black_point = temp_point if c == color
-        if c == prev_color
-          len += 1
-          next if len <= prev_len * 1.3
-          break
-        end
-
-        if len >= prev_len * 0.7
-          prev_len, len = len, 1
-          prev_color = c
-          mod_count += 1
-          next
-        end
-
-        break
-      end
-      p1, p1_mod_count = last_black_point + vec * prev_len / 2, mod_count
-
-      temp_point, prev_color = origin, color
-      len = 0
-      while prev_color == color
-        prev_color = data[temp_point += vec]
-        len += 1
-      end
-
-      last_black_point, mod_count = temp_point, 0
-      len, prev_len = 1, (len / 3.5).round_even.to_i
-      while true
-        c = data[temp_point += vec] || break
-        last_black_point = temp_point if c == color
-        if c == prev_color
-          len += 1
-          next if len <= prev_len * 1.3
-          break
-        end
-
-        if len >= prev_len * 0.7
-          prev_len, len = len, 1
-          prev_color = c
-          mod_count += 1
-          next
-        end
-
-        break
-      end
-      p2, p2_mod_count = last_black_point - vec * prev_len / 2, mod_count
-
-      p1_mod_count > p2_mod_count ? {p1, p1_mod_count} : {p2, p2_mod_count}
+      {b, c, ab_timing_mods}
     end
   end
 end
