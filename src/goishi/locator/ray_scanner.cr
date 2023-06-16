@@ -243,7 +243,7 @@ struct Goishi::LocatorSession
     def scan_timing_pattern(data : Canvas(UInt8), e1 : Point, e2 : Point, vec : Point, color : UInt8)
       unit = ((e1 - e2).length / 6).round_even.to_i
 
-      Visualizer.set_data(data)
+      # Visualizer.set_data(data)
       temp_point, prev_color = e1, color
       skip_same_color(:-)
 
@@ -284,8 +284,8 @@ struct Goishi::LocatorSession
           break if len > prev_len * 1.7
         else
           break if len < prev_len * 0.3
-          Visualizer.add_point(temp_point, "#ff0000")
-          Visualizer.add_text(temp_point, len.to_s)
+          # Visualizer.add_point(temp_point, "#ff0000")
+          # Visualizer.add_text(temp_point, len.to_s)
 
           prev_len, len = len, 1
           prev_color = c
@@ -294,11 +294,11 @@ struct Goishi::LocatorSession
       end
       p2 = last_black_point - vec * prev_len / 2
 
-      Visualizer.add_point(p1, "#ff0000")
-      Visualizer.add_point(p2, "#0000ff")
-      Visualizer.add_text(p1, p1_mod_count.to_s)
-      Visualizer.add_text(p2, p2_mod_count.to_s)
-      Visualizer.export
+      # Visualizer.add_point(p1, "#ff0000")
+      # Visualizer.add_point(p2, "#0000ff")
+      # Visualizer.add_text(p1, p1_mod_count.to_s)
+      # Visualizer.add_text(p2, p2_mod_count.to_s)
+      # Visualizer.export
 
       return {p2, p2_mod_count} if p1_mod_count < p2_mod_count && p2_mod_count.in?(4..10)
       return {p1, p1_mod_count} if p2_mod_count < p1_mod_count && p1_mod_count.in?(4..10)
