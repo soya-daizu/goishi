@@ -13,6 +13,11 @@ module Goishi
           getter {{x.id}}{{y.id}} : Point { {{y.id}} - {{x.id}} }
         {% end %}
       {% end %}
+
+      getter inner_{{x.id}} : Point do
+        vec_to_center = @center - {{x.id}}
+        {{x.id}} + vec_to_center.unit_vec * (vec_to_center.length / 3.5) / 2
+      end
     {% end %}
 
     getter w_vec : Point { (ab + cd) / 2 }
@@ -50,7 +55,7 @@ module Goishi
       w_sin_sita <= h_sin_sita ? w_vec : h_vec
     end
 
-    protected def add_to_visualizer(text : String)
+    def add_to_visualizer(text : String)
       Visualizer.add_point(@center, "#ff00ff")
       Visualizer.add_point(@a, "#ff0000")
       Visualizer.add_point(@b, "#0000ff")
