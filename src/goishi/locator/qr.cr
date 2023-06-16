@@ -47,8 +47,8 @@ struct Goishi::LocatorSession
         location = test_finder_qr(q3, q1, q2) unless location
         next unless location
 
+        yield location, candidates_count
         candidates_count += 1
-        yield location
       end
     end
 
