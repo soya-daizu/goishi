@@ -1,6 +1,5 @@
 module Goishi
   module Binarizer
-    BLOCK_COUNT       = 18
     MIN_DYNAMIC_RANGE = 24
 
     # Creates a new binarized canvas from a matrix of Tuples of each containing
@@ -8,15 +7,20 @@ module Goishi
     def self.binarize(data : Canvas(Tuple(UInt8, UInt8, UInt8)))
       data = self.grayscale(data)
 
-      block_size = (Math.max(data.size_x, data.size_y) / BLOCK_COUNT).ceil.to_i
-      avg_blocks = self.make_avg_blocks(data, block_size)
+      width, height = data.size_x, data.size_y
+      x_block_count = width >> 3
+      y_block_count = height >> 3
+      x_block_size = (width / x_block_count).ceil.to_i
+      y_block_size = (height / y_block_count).ceil.to_i
+
+      avg_blocks = self.make_avg_blocks(data, x_block_count, y_block_count, x_block_size, y_block_size)
 
       binarized = Canvas(UInt8).new(data.size_x, data.size_y, 0_u8)
 
-      BLOCK_COUNT.times do |block_y|
-        BLOCK_COUNT.times do |block_x|
-          left = block_x < 2 ? 2 : block_x > BLOCK_COUNT - 3 ? BLOCK_COUNT - 3 : block_x
-          top = block_y < 2 ? 2 : block_y > BLOCK_COUNT - 3 ? BLOCK_COUNT - 3 : block_y
+      y_block_count.times do |block_y|
+        x_block_count.times do |block_x|
+          left = block_x < 2 ? 2 : block_x > x_block_count - 3 ? x_block_count - 3 : block_x
+          top = block_y < 2 ? 2 : block_y > y_block_count - 3 ? y_block_count - 3 : block_y
           sum = 0
           (-2..2).each do |xx|
             (-2..2).each do |yy|
@@ -25,10 +29,10 @@ module Goishi
           end
 
           threshold = sum / 25
-          block_size.times do |yy|
-            block_size.times do |xx|
-              x = block_x * block_size + xx
-              y = block_y * block_size + yy
+          y_block_size.times do |yy|
+            x_block_size.times do |xx|
+              x = block_x * x_block_size + xx
+              y = block_y * y_block_size + yy
               lum = data[x, y]?
               next unless lum
               binarized[x, y] = lum <= threshold ? 1_u8 : 0_u8
@@ -49,29 +53,32 @@ module Goishi
       end
     end
 
-    private def self.make_avg_blocks(data : Canvas(UInt8), block_size : Int)
-      block_avgs = Canvas(UInt8).new(BLOCK_COUNT, BLOCK_COUNT, 0_u8)
+    private def self.make_avg_blocks(data : Canvas(UInt8), x_block_count : Int, y_block_count : Int,
+                                     x_block_size : Int, y_block_size : Int)
+      block_avgs = Canvas(UInt8).new(x_block_count, y_block_count, 0_u8)
 
-      BLOCK_COUNT.times do |block_y|
-        BLOCK_COUNT.times do |block_x|
-          sum, min, max, count = 0, 255_u8, 0_u8, 0
+      y_block_count.times do |block_y|
+        x_block_count.times do |block_x|
+          sum, min, max, count = 0, 255, 0, 0
 
-          block_size.times do |yy|
-            block_size.times do |xx|
-              x = block_x * block_size + xx
-              y = block_y * block_size + yy
+          y_block_size.times do |yy|
+            x_block_size.times do |xx|
+              x = block_x * x_block_size + xx
+              y = block_y * y_block_size + yy
               pixel_lumosity = data[x, y]?
               next unless pixel_lumosity
 
               sum += pixel_lumosity
+              count += 1
+              next if max - min > MIN_DYNAMIC_RANGE
+
               min = Math.min(min, pixel_lumosity)
               max = Math.max(max, pixel_lumosity)
-              count += 1
             end
           end
 
           avg = sum / count
-          if max.to_i - min <= MIN_DYNAMIC_RANGE
+          if max - min <= MIN_DYNAMIC_RANGE
             avg = min / 2
 
             if block_y > 0 && block_x > 0
