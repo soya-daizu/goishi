@@ -6,24 +6,17 @@ struct Goishi::LocatorSession
       @finder_quads.each do |q|
         return if candidates_count >= max_candidates
 
-        top_angle, top_edges = q.ab.unit_vec, {q.inner_a, q.inner_b}
-        left_angle, left_edges = q.ac.unit_vec, {q.inner_a, q.inner_c}
-        bottom_angle, bottom_edges = q.cd.unit_vec, {q.inner_c, q.inner_d}
-        right_angle, right_edges = q.bd.unit_vec, {q.inner_b, q.inner_d}
-
         location = nil
-        {% for set in {
-                        {:top, :left, :a},
-                        {:left, :bottom, :c},
-                        {:bottom, :right, :d},
-                        {:right, :top, :b},
-                      } %}
-          {% s1, s2, top_left = set %}
+        {% for set in { {:ab, :ac}, {:ca, :cd}, {:dc, :db}, {:bd, :ba} } %}
+          {% s1, s2 = set %}
+          {% top_left = s1.chars[0].id %}
+          s1_edges = { q.inner_{{s1.chars[0].id}}, q.inner_{{s1.chars[1].id}} }
+          s2_edges = { q.inner_{{s2.chars[0].id}}, q.inner_{{s2.chars[1].id}} }
 
           location = test_finder_mqr(
             q, q.inner_{{top_left.id}},
-            {{s1.id}}_edges, {{s2.id}}_edges,
-            {{s1.id}}_angle, {{s2.id}}_angle,
+            s1_edges, s2_edges,
+            q.{{s1.id}}.unit_vec, q.{{s2.id}}.unit_vec,
           ) unless location
 
         {% end %}
@@ -39,8 +32,7 @@ struct Goishi::LocatorSession
                                 side1_vec : Point, side2_vec : Point)
       result = test_timing_patterns_mqr(
         side1, side2, side1_vec, side2_vec, q.color
-      )
-      return unless result
+      ) || return
 
       a = top_left
       b, c, timing_mods = result
