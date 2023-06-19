@@ -111,10 +111,8 @@ struct Goishi::LocatorSession
                     intersection.y.in?(0...data.size_y)
 
       # Try finding an alignment pattern around D
-      alignment_point = refine_bottom_right(
-        intersection, a_quad.center,
-        unit, color
-      ) if version >= 2
+      est_alignment = intersection - (intersection - a_quad.center).unit_vec * 3 * unit
+      alignment_point = refine_bottom_right(est_alignment, unit, color) if version >= 2
       if alignment_point
         d = alignment_point
         bottom_right_offset = 6.5
@@ -134,25 +132,6 @@ struct Goishi::LocatorSession
         a_quad.center, b_quad.center, c_quad.center, d,
         version, color, {3.5, 3.5, 3.5, bottom_right_offset}
       )
-    end
-
-    # Refine the bottom right point by finding an alignment pattern around the given starting point
-    private def refine_bottom_right(point : Point, a : Point, unit : Int, color : UInt8)
-      est_alignment = point - (point - a).unit_vec * 3 * unit
-      from = est_alignment - 5 * unit
-      to = est_alignment + 5 * unit
-
-      alignment_quads = [] of Quad
-      LineScanner.scan_alignment_pat(data, from, to, color).each do |sg|
-        q = RayScanner.test_alignment_scangroup(data, sg)
-        alignment_quads.push(q) if q
-      end
-
-      alignment_quads.sort_by! do |q|
-        (est_alignment - q.center).length
-      end
-
-      alignment_quads[0]?.try(&.center)
     end
   end
 end

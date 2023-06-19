@@ -39,6 +39,10 @@ module Goishi
       Point.new(@x / other, @y / other)
     end
 
+    def inv
+      Point.new(-@x, -@y)
+    end
+
     def unit_vec
       self / self.length
     end

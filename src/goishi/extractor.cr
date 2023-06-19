@@ -8,19 +8,25 @@ module Goishi
     def extract(location : QRLocation)
       case location.type
       when QR.class
-        dst_size = 17 + location.version * 4
+        dst_width = 17 + location.version * 4
+        dst_height = dst_width
       when MQR.class
-        dst_size = 9 + location.version * 2
+        dst_width = 9 + location.version * 2
+        dst_height = dst_width
+      when RMQR.class
+        v = RMQR::Version.new(location.version)
+        dst_width = v.symbol_size.width
+        dst_height = v.symbol_size.height
       else
         raise "Unsupported QR type"
       end
 
-      dst = Canvas(UInt8).new(dst_size, dst_size, 0_u8)
+      dst = Canvas(UInt8).new(dst_width, dst_height, 0_u8)
 
-      transformer = get_transformer(location, dst_size)
+      transformer = get_transformer(location, dst_width, dst_height)
 
-      dst_size.times do |y|
-        dst_size.times do |x|
+      dst_height.times do |y|
+        dst_width.times do |x|
           src_pixel = transformer.call(x + 0.5, y + 0.5)
           dst[x, y] = @data[src_pixel.x.to_i, src_pixel.y.to_i]? || 0_u8
         end
@@ -29,12 +35,12 @@ module Goishi
       dst
     end
 
-    private def get_transformer(location : QRLocation, dst_size : Int)
+    private def get_transformer(location : QRLocation, dst_width : Int, dst_height : Int)
       q2s = scangroup_to_square(
         Point.new(location.offset[0], location.offset[0]),
-        Point.new(dst_size - location.offset[1], location.offset[1]),
-        Point.new(dst_size - location.offset[3], dst_size - location.offset[3]),
-        Point.new(location.offset[2], dst_size - location.offset[2])
+        Point.new(dst_width - location.offset[1], location.offset[1]),
+        Point.new(dst_width - location.offset[3], dst_height - location.offset[3]),
+        Point.new(location.offset[2], dst_height - location.offset[2])
       )
       s2q = square_to_scangroup(
         location.top_left, location.top_right,
