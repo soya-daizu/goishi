@@ -73,10 +73,12 @@ def decode_mqr(input_name : String)
     string = begin
       Goishi::MQR::Decoder.decode_to_string(extracted_canvas)
     rescue e : Goishi::MQR::Decoder::VersionMismatchError
+      puts e
       location.version = e.actual_version
       extracted_canvas = extractor.extract(location)
       Goishi::MQR::Decoder.decode_to_string(extracted_canvas) rescue next
     rescue e
+      puts e
       extracted_canvas = extractor.extract(location)
       extracted_canvas.flip_tr_bl
       Goishi::MQR::Decoder.decode_to_string(extracted_canvas) rescue next
@@ -87,6 +89,39 @@ def decode_mqr(input_name : String)
   end
 end
 
+def decode_rmqr(input_name : String)
+  puts input_name
+  canvas = read_file(input_name)
+
+  locator = Goishi::LocatorSession.new
+  locator.set_data(canvas)
+  locator.locate_rmqr(100) do |location, i|
+    # p! location
+    extractor = Goishi::Extractor.new(canvas)
+    extracted_canvas = extractor.extract(location)
+    extracted_canvas.invert if location.color == 0
+    write_file("extracted#{i}.png", extracted_canvas)
+
+    string = begin
+      Goishi::RMQR::Decoder.decode_to_string(extracted_canvas)
+    rescue e : Goishi::RMQR::Decoder::VersionMismatchError
+      puts e
+      location.version = e.actual_version
+      extracted_canvas = extractor.extract(location)
+      Goishi::RMQR::Decoder.decode_to_string(extracted_canvas) rescue next
+    rescue e
+      puts e
+      extracted_canvas = extractor.extract(location)
+      extracted_canvas.flip_tr_bl
+      Goishi::RMQR::Decoder.decode_to_string(extracted_canvas) rescue next
+    end
+    p! string
+
+    break
+  end
+end
+
+# decode_qr("../../ダウンロード/qrcodes/detection/damaged/image033.jpg")
 # decode_qr("examples/assets/qr/test.png")
 # decode_qr("examples/assets/qr/skewed1.png")
 # decode_qr("examples/assets/qr/skewed2.png")
@@ -96,7 +131,14 @@ end
 #  decode_qr("examples/assets/qr/rotate#{i}.png")
 # end
 # 5.times do |i|
-#   decode_qr("examples/assets/qr/real_world#{i + 1}.png")
+#  decode_qr("examples/assets/qr/real_world#{i + 1}.png")
+# end
+# decode_qr("examples/assets/qr/real_world1.png")
+
+# decode_mqr("examples/assets/mqr/hflipped.png")
+# decode_mqr("examples/assets/mqr/vflipped.png")
+# 0.step(to: 330, by: 30) do |i|
+#  decode_mqr("examples/assets/mqr/rotate#{i}.png")
 # end
 
-decode_mqr("examples/assets/mqr/test.png")
+decode_rmqr("../goban/test.png")
